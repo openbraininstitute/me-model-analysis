@@ -1,0 +1,5 @@
+image: python:latest
+
+python_build:
+  script:
+    - make python_build
