@@ -19,7 +19,7 @@ help:
 
 venv:
 	python3 -m venv $@
-	venv/bin/pip install pycodestyle pydocstyle pylint isort codespell
+	venv/bin/pip install pycodestyle pydocstyle pylint isort codespell setuptools
 	venv/bin/pip install -e .
 
 python_build: | venv

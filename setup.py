@@ -8,7 +8,8 @@ setup(
     description='ME-Model Analysis',
     version=os.environ['VERSION'],
     author='Blue Brain Project, EPFL',
-    install_requires=('uvicorn[standard]', 'fastapi', 'boto3', 'bluepyemodel[all]', 'requests'),
+    install_requires=('uvicorn[standard]', 'fastapi', 'boto3', 'requests'),
+    # bluepyemodel & bluepyemodelnexus & nexus-forge will be installed in Dockerfile
     packages=find_packages(exclude=[]),
     scripts=[],
 )

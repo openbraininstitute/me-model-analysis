@@ -6,7 +6,6 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: DEBUG
     formatter: simple
     stream: ext://sys.stderr
 loggers:
@@ -22,6 +21,31 @@ loggers:
     level: INFO
     handlers: [console]
     propagate: no
+  charset_normalizer:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  bluepyemodel:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  bluepyopt:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  efel:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  __main__:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  fontTools:
+    level: WARNING
+    handlers: [console]
+    propagate: no
 root:
-  level: DEBUG
+  level: ERROR
   handlers: [console]
+  propagate: yes

@@ -5,3 +5,36 @@
 - It will be deployed in the docker hub image `bluebrain/me-model-analysis`
 - It will be consumed by the frontend when we launch a validation of the single cell me-model.
 - It will use the on-demand service in AWS https://bbpgitlab.epfl.ch/cs/cloud/aws/deployment/-/merge_requests/437
+
+# Build
+
+### Download necessary packages
+```
+mkdir -p packages && pushd packages
+
+git clone https://bbpgitlab.epfl.ch/msg/icselector.git icselector
+git clone https://github.com/BlueBrain/nexus-forge.git nexusforge
+
+git clone https://github.com/BlueBrain/BluePyEModel.git bluepyemodel
+pushd bluepyemodel && git checkout memodel && popd
+
+git clone https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus bluepyemodelnexus
+pushd bluepyemodelnexus && git checkout memodel && popd
+
+popd
+```
+
+### Build package
+```
+make docker_build
+```
+
+### Push package
+You need the proper dockerhub credentials
+```
+ORIGINAL_IMG="me-model-analysis:dev"
+END_IMG="bluebrain/me-model-analysis:latest"
+
+docker tag $ORIGINAL_IMG $END_IMG
+docker push $END_IMG
+```
