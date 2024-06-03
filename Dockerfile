@@ -17,7 +17,7 @@ RUN apt-get update \
 WORKDIR /opt/me-model-analysis
 
 COPY packages packages
-RUN pip install matplotlib==3.8.4 ./packages/icselector \
+RUN pip install ./packages/icselector \
   ./packages/bluepyemodel \
   ./packages/bluepyemodelnexus \
   ./packages/nexusforge

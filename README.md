@@ -11,16 +11,10 @@
 ### Download necessary packages
 ```
 mkdir -p packages && pushd packages
-
-git clone https://bbpgitlab.epfl.ch/msg/icselector.git icselector
+git clone --depth 1 https://bbpgitlab.epfl.ch/msg/icselector.git icselector
 git clone https://github.com/BlueBrain/nexus-forge.git nexusforge
-
-git clone https://github.com/BlueBrain/BluePyEModel.git bluepyemodel
-pushd bluepyemodel && git checkout memodel && popd
-
-git clone https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus bluepyemodelnexus
-pushd bluepyemodelnexus && git checkout memodel && popd
-
+git clone --depth 1 https://github.com/BlueBrain/BluePyEModel.git bluepyemodel
+git clone --depth 1 https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus bluepyemodelnexus
 popd
 ```
 
