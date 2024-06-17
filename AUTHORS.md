@@ -1,2 +1,2 @@
-Aurélien Jaquier @ BBP (contributor)
+Aurélien Jaquier @ BBP
 Stefano Antonel @ BBP (maintainer)
