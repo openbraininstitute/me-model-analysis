@@ -6,20 +6,6 @@
 - It will be consumed by the [frontend](https://bbpgitlab.epfl.ch/project/sbo/core-web-app/-/merge_requests/1532) when we launch a validation of the single cell me-model.
 - It will use the [on-demand](https://bbpgitlab.epfl.ch/cs/cloud/aws/deployment/-/merge_requests/437) service in AWS
 
-## Install
-
-### Download necessary packages
-
-
-// TODO: use packages from setup.py
-```bash
-mkdir -p packages && pushd packages
-git clone --depth 1 https://bbpgitlab.epfl.ch/msg/icselector.git icselector
-git clone https://github.com/BlueBrain/nexus-forge.git nexusforge
-git clone --depth 1 https://github.com/BlueBrain/BluePyEModel.git bluepyemodel
-git clone --depth 1 https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus bluepyemodelnexus
-popd
-```
 
 ### Build package
 ```bash

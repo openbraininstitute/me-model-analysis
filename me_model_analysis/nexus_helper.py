@@ -1,7 +1,7 @@
 """Get EModel, modify morphology, plot analysis and upload MEModel."""
 
 # Code taken from
-# https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus/-/blob/fa8bf3de1dd69ca4f18fb944851484251b6e6ae8/examples/memodel/memodel.py
+# https://github.com/BlueBrain/BluePyEModel/blob/main/examples/memodel/memodel.py
 
 # pylint: disable=too-many-locals,import-error
 
@@ -17,8 +17,8 @@ from bluepyemodel.emodel_pipeline.plotting import plot_models, scores
 from bluepyemodel.evaluation.evaluation import compute_responses, get_evaluator_from_access_point
 from bluepyemodel.tools.search_pdfs import copy_emodel_pdf_dependencies_to_new_path
 from bluepyemodel.validation.validation import compute_scores
-from bluepyemodelnexus.forge_access_point import get_brain_region_notation
-from bluepyemodelnexus.nexus import NexusAccessPoint
+from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from kgforge.core import KnowledgeGraphForge
 from kgforge.specializations.resources import Dataset
 

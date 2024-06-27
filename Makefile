@@ -35,8 +35,6 @@ sort_imports: | venv
 
 docker_build:
 	docker build -t $(IMAGE_NAME):dev \
-		--build-arg http_proxy=http://bbpproxy.epfl.ch:80/ \
-		--build-arg https_proxy=http://bbpproxy.epfl.ch:80/ \
 		--build-arg VERSION=$(VERSION) \
 		.
 
@@ -46,5 +44,5 @@ run_dev: docker_build
 		-e ALLOWED_ORIGIN=http://localhost:8080 \
 		-v $$(pwd)/me_model_analysis:/usr/local/lib/python3.12/site-packages/me_model_analysis \
 		-v $$(pwd)/models:/opt/me-model-analysis/models \
-		-p 8000:8000 \
+		-p 8000:8080 \
 		$(IMAGE_NAME):dev
