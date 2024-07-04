@@ -3,7 +3,7 @@ from .nexus_helper import run_me_model_analysis
 from .settings import L
 
 TOKEN = None
-MODEL_ID = None
+MODEL_SELF_URL = None
 
 
 def set_token(token):
@@ -16,14 +16,13 @@ def set_token(token):
 def set_model(values):
     """Set model."""
     L.debug('Setting model: %s', values)
-    model_id = values.get('model_id')
+    model_self_url = values.get('model_self_url')
 
-    if model_id is None:
-        raise Exception('Missing model id')
+    if model_self_url is None:
+        raise Exception('Missing model url')
 
-    global MODEL_ID  # pylint: disable=global-statement
-    MODEL_ID = model_id
-    L.info('Setting model: %s', model_id)
+    global MODEL_SELF_URL  # pylint: disable=global-statement
+    MODEL_SELF_URL = model_self_url
     return True
 
 
@@ -31,7 +30,7 @@ def run_analysis(values):
     """Run analysis."""
     L.debug('Running analysis %s', values)
     try:
-        run_me_model_analysis(MODEL_ID, TOKEN)
+        run_me_model_analysis(MODEL_SELF_URL, TOKEN)
     except Exception as e:
         L.exception(e)
         raise e
