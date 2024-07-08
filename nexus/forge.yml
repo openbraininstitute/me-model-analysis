@@ -8,7 +8,7 @@ Model:
 
 Store:
   name: BlueBrainNexus
-  endpoint: https://bbp.epfl.ch/nexus/v1
+  endpoint: https://sbo-nexus-delta.shapes-registry.org/v1
   model:
     name: RdfModel
   searchendpoints:
@@ -70,4 +70,4 @@ Resolvers:
 
 Formatters:
   identifier: https://bbp.epfl.ch/neurosciencegraph/data/{}/{}
-  identifier_bbn_self: https://bbp.epfl.ch/resources/{}/{}/{}/{} #  https://bbp.epfl.ch/nexus/v1/resources/{organization}/{project}/{schema}/{id}
+  identifier_bbn_self: https://bbp.epfl.ch/resources/{}/{}/{}/{}

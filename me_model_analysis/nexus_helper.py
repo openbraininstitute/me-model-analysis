@@ -1,7 +1,7 @@
 """Get EModel, modify morphology, plot analysis and upload MEModel."""
 
 # Code taken from
-# https://bbpgitlab.epfl.ch/cells/bluepyemodelnexus/-/blob/fa8bf3de1dd69ca4f18fb944851484251b6e6ae8/examples/memodel/memodel.py
+# https://github.com/BlueBrain/BluePyEModel/blob/main/examples/memodel/memodel.py
 
 # pylint: disable=too-many-locals,import-error
 
@@ -11,27 +11,23 @@
 
 import copy
 import pathlib
+from urllib.parse import unquote
 
+from bluepyemodel.access_point.forge_access_point import get_brain_region_notation
+from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.emodel_pipeline.memodel import MEModel
 from bluepyemodel.emodel_pipeline.plotting import plot_models, scores
 from bluepyemodel.evaluation.evaluation import compute_responses, get_evaluator_from_access_point
 from bluepyemodel.tools.search_pdfs import copy_emodel_pdf_dependencies_to_new_path
 from bluepyemodel.validation.validation import compute_scores
-from bluepyemodelnexus.forge_access_point import get_brain_region_notation
-from bluepyemodelnexus.nexus import NexusAccessPoint
 from kgforge.core import KnowledgeGraphForge
 from kgforge.specializations.resources import Dataset
-
-from me_model_analysis.settings import ENDPOINT, ORGANISATION, PROJECT
 
 
 def connect_forge(bucket, endpoint, access_token, forge_path=None):
     """Creation of a forge session."""
     if not forge_path:
-        forge_path = (
-            "https://raw.githubusercontent.com/BlueBrain/nexus-forge/"
-            + "master/examples/notebooks/use-cases/prod-forge-nexus.yml"
-        )
+        raise ValueError("Missing path to forge config file")
     forge = KnowledgeGraphForge(
         forge_path, bucket=bucket, endpoint=endpoint, token=access_token
     )
@@ -287,10 +283,18 @@ def update_memodel(
     forge.update(memodel_r)
 
 
-def run_me_model_analysis(memodel_id, access_token):
+def run_me_model_analysis(memodel_self_url, access_token):
     """Run the analysis."""
     forge_path = "./forge.yml"  # this file has to be present
     forge_ontology_path = "./forge_ontology_path.yml"  # this file also
+
+    base_and_id = memodel_self_url.split('/')
+    memodel_id = unquote(base_and_id[-1])
+
+    # extract values from the self url
+    endpoint = '/'.join(base_and_id[:4])
+    organisation = base_and_id[5]
+    project = base_and_id[6]
 
     mapper = map
     # also available:
@@ -306,8 +310,8 @@ def run_me_model_analysis(memodel_id, access_token):
 
     # create forge and retrieve ME-Model
     forge = connect_forge(
-        bucket=f"{ORGANISATION}/{PROJECT}",
-        endpoint=ENDPOINT,
+        bucket=f"{organisation}/{project}",
+        endpoint=endpoint,
         access_token=access_token,
         forge_path=forge_path
     )
@@ -354,9 +358,9 @@ def run_me_model_analysis(memodel_id, access_token):
         brain_region=brain_region,
         iteration_tag=iteration_tag,
         synapse_class=synapse_class,
-        project=PROJECT,
-        organisation=ORGANISATION,
-        endpoint=ENDPOINT,
+        project=project,
+        organisation=organisation,
+        endpoint=endpoint,
         forge_path=forge_path,  # this file has to be present
         forge_ontology_path=forge_ontology_path,  # this file also
         access_token=access_token,
