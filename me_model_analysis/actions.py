@@ -28,7 +28,7 @@ def set_model(values):
 
 def run_analysis(values):
     """Run analysis."""
-    L.debug('Running analysis %s', values)
+    L.info('Running analysis %s', values)
     try:
         run_me_model_analysis(MODEL_SELF_URL, TOKEN)
     except Exception as e:
