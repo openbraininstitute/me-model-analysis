@@ -4,3 +4,5 @@ me_model_analysis.egg-info
 __pycache__
 /*.sh
 !/entrypoint.sh
+.git
+.gitignore
