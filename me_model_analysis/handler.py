@@ -22,7 +22,12 @@ def message_handler(msg):
     if command_name not in function_mapping:
         raise Exception('Unknown command: ' + command_name)
 
-    result = function_mapping[command_name](data)
+    try:
+        result = function_mapping[command_name](data)
+    except Exception:
+        return {
+            'cmd': f"{command_name}_error"
+        }
 
     if result is None:
         raise Exception('Empty result')
