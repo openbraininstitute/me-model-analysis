@@ -26,6 +26,11 @@ from kgforge.specializations.resources import Dataset
 
 from .settings import L
 
+mime_type_dict = {
+    'png': 'image/png',
+    'pdf': 'application/pdf'
+}
+
 
 def connect_forge(bucket, endpoint, access_token, forge_path=None):
     """Creation of a forge session."""
@@ -355,9 +360,10 @@ def update_memodel(
     # That would break the storing LazyAction into a string
     for path in nexus_images:
         resource_type = path.split("__")[-1].split(".")[0]
+        file_ext = path.split('.')[-1]
         memodel_r.add_image(
             path=path,
-            content_type=f"application/{path.split('.')[-1]}",
+            content_type=mime_type_dict[file_ext] if file_ext in mime_type_dict else "application/octet-stream",
             about=resource_type,
         )
 
