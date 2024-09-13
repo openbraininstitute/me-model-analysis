@@ -24,6 +24,8 @@ from bluepyemodel.validation.validation import compute_scores
 from kgforge.core import KnowledgeGraphForge
 from kgforge.specializations.resources import Dataset
 
+from .settings import L
+
 
 def connect_forge(bucket, endpoint, access_token, forge_path=None):
     """Creation of a forge session."""
@@ -117,7 +119,7 @@ def get_new_emodel_metadata(
     morph_name,
     update_emodel_name,
     use_brain_region_from_morphology,
-    use_mtype_in_githash,
+    use_mtype_in_githash
 ):
     """Get new emodel metadata."""
     new_emodel_metadata = copy.deepcopy(access_point.emodel_metadata)
@@ -133,6 +135,7 @@ def get_new_emodel_metadata(
             new_br,
             access_point.access_point.access_token,
             access_point.forge_ontology_path,
+            access_point.access_point.endpoint
         )
 
     if use_mtype_in_githash:
@@ -364,16 +367,15 @@ def update_memodel(
 
 def run_me_model_analysis(memodel_self_url, access_token):
     """Run the analysis."""
-    forge_path = "./forge.yml"  # this file has to be present
-    forge_ontology_path = "./forge_ontology_path.yml"  # this file also
+    forge_path = "./forge.yml"
 
     base_and_id = memodel_self_url.split('/')
     memodel_id = unquote(base_and_id[-1])
 
     # extract values from the self url
-    endpoint = '/'.join(base_and_id[:4])
-    organisation = base_and_id[5]
-    project = base_and_id[6]
+    endpoint = '/'.join(base_and_id[:-5])
+    organisation = base_and_id[-4]
+    project = base_and_id[-3]
 
     mapper = map
     # also available:
@@ -387,7 +389,12 @@ def run_me_model_analysis(memodel_self_url, access_token):
     use_mtype_in_githash = True  # to distinguish from other MEModel
     add_score = True
 
+    L.debug(f'Endpoint: {endpoint}')
+    L.debug(f'Forge_path: {forge_path}')
+    L.debug(f'Bucket: "{organisation}/{project}"')
+
     # create forge and retrieve ME-Model
+    L.debug('Creating forge client')
     forge = connect_forge(
         bucket=f"{organisation}/{project}",
         endpoint=endpoint,
@@ -396,10 +403,11 @@ def run_me_model_analysis(memodel_self_url, access_token):
     )
 
     # memodel resource
-    memodel_r = forge.retrieve(memodel_id)
+    L.debug('Retrieving ME-Model related resources')
+    memodel_r = forge.retrieve(memodel_id, cross_bucket=True)
     emodel_id, morph_id = get_ids_from_memodel(memodel_r)
-    emodel_r = forge.retrieve(emodel_id)
-    morph_r = forge.retrieve(morph_id)
+    emodel_r = forge.retrieve(emodel_id, cross_bucket=True)
+    morph_r = forge.retrieve(morph_id, cross_bucket=True)
 
     # get metadata from EModel resource
     emodel = emodel_r.eModel if hasattr(emodel_r, "eModel") else None
@@ -428,6 +436,7 @@ def run_me_model_analysis(memodel_self_url, access_token):
     brain_location_ontology = morph_r.brainLocation if hasattr(morph_r, "brainLocation") else None
 
     # feed nexus access point with appropriate data
+    L.debug('Creating BluePyEModel Nexus access point')
     access_point = NexusAccessPoint(
         emodel=emodel,
         etype=etype,
@@ -440,8 +449,7 @@ def run_me_model_analysis(memodel_self_url, access_token):
         project=project,
         organisation=organisation,
         endpoint=endpoint,
-        forge_path=forge_path,  # this file has to be present
-        forge_ontology_path=forge_ontology_path,  # this file also
+        forge_path=forge_path,
         access_token=access_token,
     )
 
@@ -449,20 +457,22 @@ def run_me_model_analysis(memodel_self_url, access_token):
     access_point.pipeline_settings.current_precision = 2e-3
 
     # get cell evaluator with 'new' morphology
+    L.debug('Creating cell evaluator')
     cell_evaluator = get_cell_evaluator(access_point, morph_name, morph_format, morph_id)
 
     # get new emodel metadata (mtype, emodel, brain region, iteration/githash)
     # to correspond to combined metadata of emodel and morphology
+    L.info('Getting new EModel metadata')
     new_emodel_metadata = get_new_emodel_metadata(
         access_point,
         morph_id,
         morph_name,
         update_emodel_name,
         use_brain_region_from_morphology,
-        use_mtype_in_githash,
+        use_mtype_in_githash
     )
 
-    # plotting
+    L.debug('Creating plots')
     figures_dir = pathlib.Path("./figures") / access_point.emodel_metadata.emodel
     # trick: get scores from plot_scores, so that we don't have to run the model twice
     emodel_score, emodel_holding, emodel_threshold = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
@@ -476,7 +486,7 @@ def run_me_model_analysis(memodel_self_url, access_token):
         emodel_holding = 0
         emodel_threshold = get_threshold(cell_evaluator, access_point, mapper)
 
-    # attention! after this step, do NOT push EModel again.
+    # Attention! after this step, do NOT push EModel again.
     # It has been modified and would overwrite the correct one on nexus
 
     # move figures: to correspond to combined metadata of emodel and morphology
@@ -484,9 +494,10 @@ def run_me_model_analysis(memodel_self_url, access_token):
         access_point.emodel_metadata, new_emodel_metadata, True, True, seed, overwrite=True
     )
 
+    L.debug('Retrieving images from Nexus')
     nexus_images = get_nexus_images(access_point, seed, new_emodel_metadata, morph_id, emodel_id)
 
-    # create and store MEModel
+    L.debug('Updating ME-Model')
     update_memodel(
         forge,
         memodel_r,
