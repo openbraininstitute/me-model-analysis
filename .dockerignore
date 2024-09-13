@@ -6,3 +6,7 @@ __pycache__
 !/entrypoint.sh
 .git
 .gitignore
+packages
+nexus_temp
+build
+figures

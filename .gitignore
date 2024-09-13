@@ -7,3 +7,6 @@
 /*.sh
 !/entrypoint.sh
 /packages
+/nexus_temp
+/build
+/figures
