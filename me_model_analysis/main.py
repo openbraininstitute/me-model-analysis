@@ -16,7 +16,7 @@ from starlette.responses import Response
 from .handler import message_handler
 from .settings import L
 
-SHUTDOWN_TIMER = 900  # sec (15 min)
+SHUTDOWN_TIMER = 1800  # sec (30 min)
 SCHEDULER = sched.scheduler()
 
 
