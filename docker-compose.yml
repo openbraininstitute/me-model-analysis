@@ -1,0 +1,31 @@
+services:
+  app:
+    image: "${IMAGE_NAME}:${IMAGE_TAG}"
+    platform: linux/amd64
+    build:
+      dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT
+        - APP_NAME
+        - APP_VERSION
+        - COMMIT_SHA
+      tags:
+        - "${IMAGE_NAME}:${IMAGE_TAG_ALIAS}"
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - APP_DEBUG=true
+      - PYTHONASYNCIODEBUG=1
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - LOG_SERIALIZE=false
+      - LOG_BACKTRACE=true
+      - LOG_DIAGNOSE=true
+      - LOG_STANDARD_LOGGER__root=INFO
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./app
+          target: /code/app
+        - action: rebuild
+          path: uv.lock

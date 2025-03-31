@@ -1,50 +1,59 @@
-# me-model-analysis
+# me-model-validation
 
-### Repo that contains the code to run me-model-analysis using on-demand service in AWS
+## Description
 
-- It will be deployed in the docker hub image `bluebrain/me-model-analysis`
-- It will be consumed by the [frontend](https://bbpgitlab.epfl.ch/project/sbo/core-web-app/-/merge_requests/1532) when we launch a validation of the single cell me-model.
-- It will use the [on-demand](https://bbpgitlab.epfl.ch/cs/cloud/aws/deployment/-/merge_requests/437) service in AWS
+Repo that contains the code to run me-model-validation using on-demand service in AWS
 
+## Local build and deployment
 
-### Build package
+Requirements:
+
+- [Docker compose](https://docs.docker.com/compose/) >= 2.24.4
+- [uv](https://docs.astral.sh/uv/)
+
+Valid `make` targets:
+
+```
+help                    Show this help
+install                 Install dependencies into .venv
+compile-deps            Create or update the lock file, without upgrading the version of the dependencies
+upgrade-deps            Create or update the lock file, using the latest version of the dependencies
+check-deps              Check that the dependencies in the existing lock file are valid
+lint                    Run linters
+build                   Build the docker images
+run                     Run the application in docker
+kill                    Take down the application and remove the volumes
+clean                   Take down the application and remove the volumes and the images
+show-config             Show the docker-compose configuration in the current environment
+sh                      Run a shell in the app container
+```
+
+To build and start the Docker images locally, you can execute:
+
 ```bash
-make docker_build
+make run
 ```
 
-### Push package
-You need the proper dockerhub credentials
-```bash
-ORIGINAL_IMG="me-model-analysis:dev"
-END_IMG="bluebrain/me-model-analysis:latest"
+## Remote deployment
 
-docker tag $ORIGINAL_IMG $END_IMG
-docker push $END_IMG
-```
+To make a release, build and publish the Docker image to the registry, you need to:
 
-## Examples
-```js
-const ws = new Ws(ME_MODEL_ON_DEMAND_SVC_API_GATEWAY_URL, TOKEN);
-ws.send('set_model', { model_id: MODEL_ID }); // me-model id
+- create a release through the GitHub UI (recommended), or
+- push a tag to the main branch using git.
 
-// You might receive "Retry later" message back until the service is up
-// so you need to try again and again until you get "Processing message".
+The format of the tag should be `YYYY.M.N`, where:
 
-// Once the model is downloaded and ready you will get "set_model_done" message.
-// after this you can just start the analysis
-ws.send('run_analysis', {});
+- `YYYY` is the full year (2024, 2025 ...)
+- `M` is the short month, not zero-padded (1, 2 ... 11, 12)
+- `N` is any incremental number, not zero-padded (it doesn't need to be the day number)
 
-// this process will update the me-model Nexus entity.
-```
+## Documentation
 
-## Acknowledgment
-The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
+The API documentation is available locally at <http://127.0.0.1:8100/docs> after the local deployment.
 
+## Funding & Acknowledgment
 
+The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology.
 
-## Copyright
-Copyright (c) 2024 Blue Brain Project/EPFL
-
-This work is licensed under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
-
-
+Copyright © 2024 Blue Brain Project/EPFL
+Copyright © 2025 Open Brain Institute

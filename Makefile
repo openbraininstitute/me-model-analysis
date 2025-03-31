@@ -1,48 +1,57 @@
-.PHONY: help run_dev python_build sort_imports docker_build
+SHELL := /bin/bash
 
-VERSION?=$(shell cat ./VERSION)
-export VERSION
-IMAGE_NAME?=me-model-analysis
+export ENVIRONMENT ?= dev
+export APP_NAME := me-model-validation
+export APP_VERSION := $(shell git describe --abbrev --dirty --always --tags)
+export COMMIT_SHA := $(shell git rev-parse HEAD)
+export IMAGE_NAME ?= $(APP_NAME)
+export IMAGE_TAG := $(APP_VERSION)
+export IMAGE_TAG_ALIAS := latest
+ifneq ($(ENVIRONMENT), prod)
+	export IMAGE_TAG := $(IMAGE_TAG)-$(ENVIRONMENT)
+	export IMAGE_TAG_ALIAS := $(IMAGE_TAG_ALIAS)-$(ENVIRONMENT)
+endif
 
-define HELPTEXT
-Makefile usage
- Targets:
-    python_build    Build python package.
-    sort_imports    Sort imports in python modules.
-    run_dev         Run development instance of the backend.
-    docker_build    Build dev backend docker image.
-endef
-export HELPTEXT
+help:  ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-23s\033[0m %s\n", $$1, $$2}'
+install:  ## Install dependencies into .venv
+	uv sync --no-install-project
 
-help:
-	@echo "$$HELPTEXT"
+compile-deps:  ## Create or update the lock file, without upgrading the version of the dependencies
+	uv lock
 
-venv:
-	python3 -m venv $@
-	venv/bin/pip install pycodestyle pydocstyle pylint isort codespell setuptools
-	venv/bin/pip install -e .
+upgrade-deps:  ## Create or update the lock file, using the latest version of the dependencies
+	uv lock --upgrade
 
-python_build: | venv
-	@venv/bin/codespell me_model_analysis
-	@venv/bin/pycodestyle me_model_analysis
-	@venv/bin/pydocstyle me_model_analysis
-	@venv/bin/isort --check-only --line-width 100 me_model_analysis
-	@venv/bin/pylint me_model_analysis
-	@venv/bin/python setup.py sdist
+check-deps:  ## Check that the dependencies in the existing lock file are valid
+	uv lock --locked
 
-sort_imports: | venv
-	@venv/bin/isort --line-width 100 me_model_analysis
+format:  # Run formatters
+	uv run -m ruff format
+	uv run -m ruff check --fix
 
-docker_build:
-	docker build -t $(IMAGE_NAME):dev \
-		--build-arg VERSION=$(VERSION) \
-		.
+lint:  ## Run linters
+	uv run -m ruff format --check
+	uv run -m ruff check
+	uv run -m mypy app
 
-run_dev: docker_build
-	docker run --rm -it \
-		-e DEBUG=True \
-		-e ALLOWED_ORIGIN=http://localhost:8080 \
-		-v $$(pwd)/me_model_analysis:/usr/local/lib/python3.12/site-packages/me_model_analysis \
-		-v $$(pwd)/models:/opt/me-model-analysis/models \
-		-p 8000:8080 \
-		$(IMAGE_NAME):dev
+build:  ## Build the Docker image
+	docker compose build app
+
+publish: build  ## Publish the Docker image to DockerHub
+	docker compose push app
+
+run: build  ## Run the application in Docker
+	docker compose up --watch --remove-orphans
+
+kill:  ## Take down the application and remove the volumes
+	docker compose down --remove-orphans --volumes
+
+clean: ## Take down the application and remove the volumes and the images
+	docker compose down --remove-orphans --volumes --rmi all
+
+show-config:  ## Show the docker-compose configuration in the current environment
+	docker compose config
+
+sh: build  ## Run a shell in the app container
+	docker compose run --rm app bash

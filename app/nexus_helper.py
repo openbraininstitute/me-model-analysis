@@ -18,18 +18,18 @@ from bluepyemodel.access_point.forge_access_point import get_brain_region_notati
 from bluepyemodel.access_point.nexus import NexusAccessPoint
 from bluepyemodel.emodel_pipeline.memodel import MEModel
 from bluepyemodel.emodel_pipeline.plotting import plot_models, scores
-from bluepyemodel.evaluation.evaluation import compute_responses, get_evaluator_from_access_point
+from bluepyemodel.evaluation.evaluation import (
+    compute_responses,
+    get_evaluator_from_access_point,
+)
 from bluepyemodel.tools.search_pdfs import copy_emodel_pdf_dependencies_to_new_path
 from bluepyemodel.validation.validation import compute_scores
 from kgforge.core import KnowledgeGraphForge
 from kgforge.specializations.resources import Dataset
 
-from .settings import L
+from app.logger import L
 
-mime_type_dict = {
-    'png': 'image/png',
-    'pdf': 'application/pdf'
-}
+mime_type_dict = {"png": "image/png", "pdf": "application/pdf"}
 
 
 def connect_forge(bucket, endpoint, access_token, forge_path=None):
@@ -37,7 +37,7 @@ def connect_forge(bucket, endpoint, access_token, forge_path=None):
     if not forge_path:
         raise ValueError("Missing path to forge config file")
     forge = KnowledgeGraphForge(
-        forge_path, bucket=bucket, endpoint=endpoint, token=access_token
+        forge_path, bucket=bucket, endpoint=endpoint, token=access_token, debug=True
     )
     return forge
 
@@ -87,7 +87,9 @@ def get_morph_metadata(access_point, morph_id):
             if hasattr(resource.brainLocation.brainRegion, "label"):
                 morph_brain_region = resource.brainLocation.brainRegion.label
             else:
-                raise AttributeError("Morphology resource has no label in brainLocation.brainRegion")
+                raise AttributeError(
+                    "Morphology resource has no label in brainLocation.brainRegion"
+                )
         else:
             raise AttributeError("Morphology resource has no brainRegion in brainLocation.")
     else:
@@ -99,15 +101,14 @@ def get_morph_metadata(access_point, morph_id):
 
     if isinstance(resource.annotation, dict):
         if hasattr(resource.annotation, "type") and (
-            "MTypeAnnotation" in resource.annotation.type or
-            "nsg:MTypeAnnotation" in resource.annotation.type
+            "MTypeAnnotation" in resource.annotation.type
+            or "nsg:MTypeAnnotation" in resource.annotation.type
         ):
             morph_mtype = get_morph_mtype(resource.annotation)
     elif isinstance(resource.annotation, list):
         for annotation in resource.annotation:
             if hasattr(annotation, "type") and (
-                "MTypeAnnotation" in annotation.type or
-                "nsg:MTypeAnnotation" in annotation.type
+                "MTypeAnnotation" in annotation.type or "nsg:MTypeAnnotation" in annotation.type
             ):
                 morph_mtype = get_morph_mtype(annotation)
 
@@ -124,7 +125,7 @@ def get_new_emodel_metadata(
     morph_name,
     update_emodel_name,
     use_brain_region_from_morphology,
-    use_mtype_in_githash
+    use_mtype_in_githash,
 ):
     """Get new emodel metadata."""
     new_emodel_metadata = copy.deepcopy(access_point.emodel_metadata)
@@ -140,7 +141,7 @@ def get_new_emodel_metadata(
             new_br,
             access_point.access_point.access_token,
             access_point.forge_ontology_path,
-            access_point.access_point.endpoint
+            access_point.access_point.endpoint,
         )
 
     if use_mtype_in_githash:
@@ -198,9 +199,14 @@ def plot_scores(access_point, cell_evaluator, mapper, figures_dir, seed):
 
 def get_default_threshold_search_protocol():
     """Create a default protocol to use to search for the threshold with no holding current."""
-    from bluepyemodel.evaluation.evaluator import define_efeatures, define_preprotocols, soma_loc
-    from bluepyemodel.evaluation.fitness_calculator_configuration import \
-        FitnessCalculatorConfiguration
+    from bluepyemodel.evaluation.evaluator import (
+        define_efeatures,
+        define_preprotocols,
+        soma_loc,
+    )
+    from bluepyemodel.evaluation.fitness_calculator_configuration import (
+        FitnessCalculatorConfiguration,
+    )
     from bluepyemodel.evaluation.protocols import ProtocolRunner
 
     rmp_prot_name = "RMPProtocol_noholding"
@@ -358,34 +364,39 @@ def update_memodel(
     # add images in memodel resource
     # Do NOT do this BEFORE turning resource into a Dataset.
     # That would break the storing LazyAction into a string
+
     for path in nexus_images:
         resource_type = path.split("__")[-1].split(".")[0]
-        file_ext = path.split('.')[-1]
+        file_ext = path.split(".")[-1]
+
         memodel_r.add_image(
             path=path,
-            content_type=mime_type_dict[file_ext] if file_ext in mime_type_dict else "application/octet-stream",
+            content_type=mime_type_dict.get(file_ext, "application/octet-stream"),
             about=resource_type,
         )
 
     # update memodel resource
+    L.debug("## Model after update")
+    L.debug(memodel_r)
     forge.update(memodel_r)
 
 
 def run_me_model_analysis(memodel_self_url, access_token):
     """Run the analysis."""
-    forge_path = "./forge.yml"
+    forge_path = "./nexus/forge.yml"
 
-    base_and_id = memodel_self_url.split('/')
+    base_and_id = memodel_self_url.split("/")
     memodel_id = unquote(base_and_id[-1])
 
     # extract values from the self url
-    endpoint = '/'.join(base_and_id[:-5])
+    endpoint = "/".join(base_and_id[:-5])
     organisation = base_and_id[-4]
     project = base_and_id[-3]
 
     mapper = map
     # also available:
     # from bluepyemodel.tools.multiprocessing import get_mapper
+
     # mapper = get_mapper(backend="ipyparallel")
     # mapper = get_mapper(backend="multiprocessing")
 
@@ -395,25 +406,29 @@ def run_me_model_analysis(memodel_self_url, access_token):
     use_mtype_in_githash = True  # to distinguish from other MEModel
     add_score = True
 
-    L.debug(f'Endpoint: {endpoint}')
-    L.debug(f'Forge_path: {forge_path}')
+    L.debug(f"Endpoint: {endpoint}")
+    L.debug(f"Forge_path: {forge_path}")
     L.debug(f'Bucket: "{organisation}/{project}"')
 
     # create forge and retrieve ME-Model
-    L.debug('Creating forge client')
+    L.debug("Creating forge client")
     forge = connect_forge(
         bucket=f"{organisation}/{project}",
         endpoint=endpoint,
         access_token=access_token,
-        forge_path=forge_path
+        forge_path=forge_path,
     )
 
     # memodel resource
-    L.debug('Retrieving ME-Model related resources')
+    L.debug("Retrieving ME-Model related resources")
     memodel_r = forge.retrieve(memodel_id, cross_bucket=True)
     emodel_id, morph_id = get_ids_from_memodel(memodel_r)
     emodel_r = forge.retrieve(emodel_id, cross_bucket=True)
     morph_r = forge.retrieve(morph_id, cross_bucket=True)
+
+    L.debug("Setting ME-Model status to 'running'")
+    memodel_r.status = "running"
+    forge.update(memodel_r)
 
     # get metadata from EModel resource
     emodel = emodel_r.eModel if hasattr(emodel_r, "eModel") else None
@@ -424,11 +439,19 @@ def run_me_model_analysis(memodel_self_url, access_token):
 
     if hasattr(emodel_r, "subject"):
         if hasattr(emodel_r.subject, "species"):
-            species = emodel_r.subject.species.label if hasattr(emodel_r.subject.species, "label") else None
+            species = (
+                emodel_r.subject.species.label
+                if hasattr(emodel_r.subject.species, "label")
+                else None
+            )
     brain_region = None
     if hasattr(emodel_r, "brainLocation"):
         if hasattr(emodel_r.brainLocation, "brainRegion"):
-            brain_region = emodel_r.brainLocation.brainRegion.label if hasattr(emodel_r.brainLocation.brainRegion, "label") else None
+            brain_region = (
+                emodel_r.brainLocation.brainRegion.label
+                if hasattr(emodel_r.brainLocation.brainRegion, "label")
+                else None
+            )
     iteration_tag = emodel_r.iteration if hasattr(emodel_r, "iteration") else None
     synapse_class = emodel_r.synapse_class if hasattr(emodel_r, "synapseClass") else None
     seed = int(emodel_r.seed if hasattr(emodel_r, "seed") else 0)
@@ -442,7 +465,7 @@ def run_me_model_analysis(memodel_self_url, access_token):
     brain_location_ontology = morph_r.brainLocation if hasattr(morph_r, "brainLocation") else None
 
     # feed nexus access point with appropriate data
-    L.debug('Creating BluePyEModel Nexus access point')
+    L.debug("Creating BluePyEModel Nexus access point")
     access_point = NexusAccessPoint(
         emodel=emodel,
         etype=etype,
@@ -463,25 +486,27 @@ def run_me_model_analysis(memodel_self_url, access_token):
     access_point.pipeline_settings.current_precision = 2e-3
 
     # get cell evaluator with 'new' morphology
-    L.debug('Creating cell evaluator')
+    L.debug("Creating cell evaluator")
     cell_evaluator = get_cell_evaluator(access_point, morph_name, morph_format, morph_id)
 
     # get new emodel metadata (mtype, emodel, brain region, iteration/githash)
     # to correspond to combined metadata of emodel and morphology
-    L.info('Getting new EModel metadata')
+    L.info("Getting new EModel metadata")
     new_emodel_metadata = get_new_emodel_metadata(
         access_point,
         morph_id,
         morph_name,
         update_emodel_name,
         use_brain_region_from_morphology,
-        use_mtype_in_githash
+        use_mtype_in_githash,
     )
 
-    L.debug('Creating plots')
+    L.debug("Creating plots")
     figures_dir = pathlib.Path("./figures") / access_point.emodel_metadata.emodel
     # trick: get scores from plot_scores, so that we don't have to run the model twice
-    emodel_score, emodel_holding, emodel_threshold = plot(access_point, seed, cell_evaluator, figures_dir, mapper)
+    emodel_score, emodel_holding, emodel_threshold = plot(
+        access_point, seed, cell_evaluator, figures_dir, mapper
+    )
     if not add_score:
         emodel_score = None
 
@@ -497,13 +522,18 @@ def run_me_model_analysis(memodel_self_url, access_token):
 
     # move figures: to correspond to combined metadata of emodel and morphology
     copy_emodel_pdf_dependencies_to_new_path(
-        access_point.emodel_metadata, new_emodel_metadata, True, True, seed, overwrite=True
+        access_point.emodel_metadata,
+        new_emodel_metadata,
+        True,
+        True,
+        seed,
+        overwrite=True,
     )
 
-    L.debug('Retrieving images from Nexus')
+    L.debug("Retrieving images from Nexus")
     nexus_images = get_nexus_images(access_point, seed, new_emodel_metadata, morph_id, emodel_id)
 
-    L.debug('Updating ME-Model')
+    L.debug("Updating ME-Model")
     update_memodel(
         forge,
         memodel_r,
