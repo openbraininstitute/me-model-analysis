@@ -36,16 +36,14 @@ make run
 
 ## Remote deployment
 
-To make a release, build and publish the Docker image to the registry, you need to:
+To make a release, build and publish the Docker image to the registry, you need to start the `publish-production-image` workflow.
 
-- create a release through the GitHub UI (recommended), or
-- push a tag to the main branch using git.
-
-The format of the tag should be `YYYY.M.N`, where:
+The format of the tag should be `YYYY.MM.DD.N`, where:
 
 - `YYYY` is the full year (2024, 2025 ...)
-- `M` is the short month, not zero-padded (1, 2 ... 11, 12)
-- `N` is any incremental number, not zero-padded (it doesn't need to be the day number)
+- `M` is the month, zero-padded (01, 02 ... 11, 12)
+- `D` is the date, zero-padded (01, 02 ... 29, ...)
+- `N` is any incremental number, not zero-padded
 
 ## Documentation
 
