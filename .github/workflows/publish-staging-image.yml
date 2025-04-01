@@ -40,7 +40,7 @@ jobs:
 
       - name: Build a Docker image
         run: |
-          docker build --build-arg DEPLOYMENT_ENV=staging -t ${{ vars.PUBLICECR_URI }}:staging .
+          make build
 
       - name: Publish To AWS ECR
         run: |

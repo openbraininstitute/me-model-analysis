@@ -2,9 +2,9 @@ name: Publish PRODUCTION image
 
 on:
   # TODO: remove push even
-  push:
-    branches:
-      - chore/refactor
+  # push:
+  #   branches:
+  #     - chore/refactor
   workflow_dispatch:
 
 permissions:

@@ -4,7 +4,7 @@ ARG PYTHON_VERSION=3.12
 ARG PYTHON_BASE=${PYTHON_VERSION}-slim
 
 # uv stage
-FROM ghcr.io/astral-sh/uv:${UV_VERSION} as uv
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
 # build stage
 FROM python:$PYTHON_BASE AS builder

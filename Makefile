@@ -3,7 +3,7 @@ SHELL := /bin/bash
 export ENVIRONMENT ?= dev
 export APP_NAME := me-model-validation
 export IMAGE_NAME ?= $(APP_NAME)
-export IMAGE_TAG := latest-$(ENVIRONMENT)
+export IMAGE_TAG ?= latest-$(ENVIRONMENT)
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-23s\033[0m %s\n", $$1, $$2}'
