@@ -22,7 +22,7 @@ SHUTDOWN_TIMER = 1800  # sec (30 min)
 scheduler = scheduler()
 
 
-def _shutdown_timer():
+def _shutdown_timer() -> None:
     if len(scheduler.queue) == 0:
         L.info("Server idle timeout, shutting down...")
         os.kill(os.getpid(), signal.SIGTERM)
@@ -70,13 +70,14 @@ def send_message(apigw, conn, data):
         L.exception("Connection is gone.")
 
 
-def process_message(msg: dict):
+def process_message(msg: dict) -> None:
     """Call different functions based on message."""
-    # apigw = os.environ["APIGW_ENDPOINT"]
-    # region = os.environ["APIGW_REGION"]
-    # conn = os.environ["APIGW_CONN_ID"]
-    # L.info("apigw=%s region=%s conn=%s", apigw, region, conn)
-    # L.info("processing msg=%s ...", msg)
+    apigw = settings.APIGW_ENDPOINT
+    region = settings.APIGW_REGION
+    conn = settings.APIGW_CONN_ID
+
+    L.info(f"apigw={apigw} region={region} conn={conn}")
+    L.info(f"processing msg={msg} ...")
 
     try:
         result = message_handler(msg)
@@ -84,10 +85,12 @@ def process_message(msg: dict):
         L.exception("Error during processing msg=%s: %s", msg, e)
         raise Exception(e) from e
 
-    # apigw = boto3.client(
-    #     "apigatewaymanagementapi", endpoint_url=apigw, region_name=region
-    # )
-    # send_message(apigw, conn, result)
+    if apigw is None:
+        L.info("No apigw endpoint, skipping message send.")
+        return
+
+    apigw = boto3.client("apigatewaymanagementapi", endpoint_url=apigw, region_name=region)
+    send_message(apigw, conn, result)
 
 
 @app.post("/init")
@@ -112,7 +115,7 @@ def default(msg: dict, background_tasks: BackgroundTasks):
 
 
 @app.post("/shutdown")
-def shutdown():
+def shutdown() -> Response:
     """Shutdown the service."""
     L.info("shutdown")
     os.kill(os.getpid(), signal.SIGTERM)
@@ -120,7 +123,7 @@ def shutdown():
 
 
 @app.get("/health", dependencies=[Depends(no_cache)])
-async def health():
+async def health() -> Response:
     """Health endpoint."""
     L.info("health")
     return Response(status_code=204)
@@ -131,7 +134,7 @@ def run(
     msg: dict,
     background_tasks: BackgroundTasks,
     authorization: Annotated[str | None, Header()] = None,
-):
+) -> Response:
     """Run analysis."""
     if authorization is None:
         raise Exception("Missing authorization header")
@@ -145,3 +148,5 @@ def run(
     )
 
     background_tasks.add_task(process_message, {"cmd": "run_analysis", "data": {}})
+
+    return Response(status_code=204)
