@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - main
-      - chore/refactor # TODO: remove the branch
   workflow_dispatch:
 
 concurrency:
@@ -46,6 +45,7 @@ jobs:
         run: |
           docker push ${{ vars.PUBLICECR_URI }}:staging
 
+      # TODO : uncomment once the redeploy role is created
       # - name: Authenticate with AWS ECS
       #   uses: aws-actions/configure-aws-credentials@v4
       #   with:
