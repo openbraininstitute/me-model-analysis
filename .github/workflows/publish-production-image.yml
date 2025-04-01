@@ -2,9 +2,9 @@ name: Publish PRODUCTION image
 
 on:
   # TODO: remove push even
-  # push:
-  #   branches:
-  #     - chore/refactor
+  push:
+    branches:
+      - chore/refactor
   workflow_dispatch:
 
 permissions:
@@ -49,6 +49,7 @@ jobs:
 
           NEW_TAG="${YEAR}.${MONTH}.${DAY}.${COUNTER}"
           echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${NEW_TAG}" >> $GITHUB_ENV
           echo "New tag: $NEW_TAG"
 
       - name: Create Git Tag
@@ -70,8 +71,8 @@ jobs:
 
       - name: Build a Docker image
         run: |
-          docker build --build-arg DEPLOYMENT_ENV=production -t ${{ vars.PUBLICECR_URI }}:${{ env.NEW_TAG }} .
+          make build
 
       - name: Publish To AWS ECR
         run: |
-          docker push ${{ vars.PUBLICECR_URI }}:${{ env.NEW_TAG }}
+          docker push ${{ vars.PUBLICECR_URI }}:${{ env.IMAGE_TAG }}
