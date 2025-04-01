@@ -28,6 +28,7 @@ from kgforge.core import KnowledgeGraphForge, Resource
 from kgforge.specializations.resources import Dataset
 
 from app.logger import L
+from app.config import settings
 
 mime_type_dict = {"png": "image/png", "pdf": "application/pdf"}
 
@@ -516,7 +517,7 @@ def update_memodel_status(forge: KnowledgeGraphForge, memodel: Resource, status:
 
 def run_me_model_analysis(memodel_self_url: str, access_token: str) -> None:
     """Run the analysis for a ME-Model."""
-    forge_path = "./nexus/forge.yml"
+    forge_path = f"./nexus/forge-{settings.DEPLOYMENT_ENV}.yml"
 
     base_and_id = memodel_self_url.split("/")
     memodel_id = unquote(base_and_id[-1])

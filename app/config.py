@@ -1,5 +1,7 @@
 """Configuration."""
 
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,17 +15,12 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    ENVIRONMENT: str = "dev"
-    APP_NAME: str = "accounting-service"
-    APP_VERSION: str | None = None
+    DEPLOYMENT_ENV: Literal["staging", "production"] = "staging"
     APP_DEBUG: bool = False
-    COMMIT_SHA: str | None = None
 
     UVICORN_PORT: int = 8000
 
     ALLOWED_ORIGIN: list[str] = ["*"]
-
-    NEXUS_DELTA_BASE_URL: str = "https://staging.openbraininstitute.org/api/nexus/v1"
 
     APIGW_ENDPOINT: str | None = None
     APIGW_REGION: str | None = None

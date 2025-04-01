@@ -6,11 +6,6 @@ services:
       dockerfile: Dockerfile
       args:
         - ENVIRONMENT
-        - APP_NAME
-        - APP_VERSION
-        - COMMIT_SHA
-      tags:
-        - "${IMAGE_NAME}:${IMAGE_TAG_ALIAS}"
     ports:
       - "127.0.0.1:8000:8000"
     environment:

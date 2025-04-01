@@ -1,7 +1,7 @@
 """Actions."""
 
-from app.nexus_helper import run_me_model_analysis
 from app.logger import L
+from app.nexus_helper import run_me_model_analysis
 
 TOKEN = None
 MODEL_SELF_URL = None

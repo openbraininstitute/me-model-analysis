@@ -69,13 +69,7 @@ COPY --chown=app:app nexus/ nexus/
 RUN python -m compileall .  # compile app files
 
 ARG ENVIRONMENT
-ARG APP_NAME
-ARG APP_VERSION
-ARG COMMIT_SHA
 ENV ENVIRONMENT=${ENVIRONMENT}
-ENV APP_NAME=${APP_NAME}
-ENV APP_VERSION=${APP_VERSION}
-ENV COMMIT_SHA=${COMMIT_SHA}
 
 RUN <<EOT
 python -V
