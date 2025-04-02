@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 export ENVIRONMENT ?= dev
-export APP_NAME := me-model-validation
+export APP_NAME := me-model-analysis
 export IMAGE_NAME ?= $(APP_NAME)
 export IMAGE_TAG ?= latest-$(ENVIRONMENT)
 

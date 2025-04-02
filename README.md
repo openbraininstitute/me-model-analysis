@@ -1,8 +1,8 @@
-# me-model-validation
+# me-model-analysis
 
 ## Description
 
-Repo that contains the code to run me-model-validation using on-demand service in AWS
+Repo that contains the code to run me-model-analysis using on-demand service in AWS
 
 ## Local build and deployment
 

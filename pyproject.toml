@@ -1,7 +1,7 @@
 [project]
-name = "me-model-validation"
+name = "me-model-analysis"
 version = "0.0.0"
-description = "ME-model validation service"
+description = "ME-model analysis service"
 authors = [
     {name = "Blue Brain Project, EPFL"},
     {name = "Open Brain Institute, OBI"},

@@ -1156,7 +1156,7 @@ wheels = [
 ]
 
 [[package]]
-name = "me-model-validation"
+name = "me-model-analysis"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
