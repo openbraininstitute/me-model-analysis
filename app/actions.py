@@ -34,6 +34,6 @@ def run_analysis(values):
         run_me_model_analysis(MODEL_SELF_URL, TOKEN)
     except Exception as e:
         L.exception(e)
-        raise e
+        raise
     L.info("Analysis done")
     return True

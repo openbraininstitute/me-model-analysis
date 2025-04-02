@@ -105,7 +105,7 @@ def init(msg: dict):
 
 
 @app.post("/default")
-def default(msg: dict, background_tasks: BackgroundTasks):
+def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     """Process message."""
     L.info("SVC DEFAULT msg=%s", msg)
     # reset idle shutdown timer
