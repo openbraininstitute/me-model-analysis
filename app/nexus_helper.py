@@ -27,8 +27,8 @@ from bluepyemodel.validation.validation import compute_scores
 from kgforge.core import KnowledgeGraphForge, Resource
 from kgforge.specializations.resources import Dataset
 
-from app.logger import L
 from app.config import settings
+from app.logger import L
 
 mime_type_dict = {"png": "image/png", "pdf": "application/pdf"}
 
