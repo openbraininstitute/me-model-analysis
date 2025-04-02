@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - chore/refactor
   workflow_dispatch:
 
 concurrency:

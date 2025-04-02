@@ -506,7 +506,7 @@ def perform_analysis(access_point, cell_evaluator, seed, mapper, add_score=True)
         emodel_holding = 0
         emodel_threshold = get_threshold(cell_evaluator, access_point, mapper)
 
-    return emodel_score, emodel_holding, emodel_threshold, figures_dir
+    return emodel_score, emodel_holding, emodel_threshold
 
 
 def update_memodel_status(forge: KnowledgeGraphForge, memodel: Resource, status: str) -> None:
