@@ -1,12 +1,21 @@
-venv
-dist
-me_model_analysis.egg-info
-__pycache__
-/*.sh
-!/entrypoint.sh
-.git
-.gitignore
-packages
-nexus_temp
-build
-figures
+# venv
+# dist
+# me_model_analysis.egg-info
+# __pycache__
+# /*.sh
+# !/entrypoint.sh
+# .git
+# .gitignore
+# packages
+# nexus_temp
+# build
+# figures
+
+**/*~
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+**/__pycache__
+**/*.pyc
+**/*.swp
+**/*.egg-info

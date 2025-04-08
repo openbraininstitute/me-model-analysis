@@ -1,2 +1,3 @@
-Aurélien Jaquier @ BBP
-Stefano Antonel @ BBP (maintainer)
+Stefano Antonel @ BBP
+Aurélien Jaquier @ OBI
+Pavlo Getta @ OBI (maintainer)
