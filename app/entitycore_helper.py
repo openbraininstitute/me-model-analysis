@@ -108,6 +108,21 @@ def download_morphology(morphology, client, access_token, morph_dir="./morpholog
     return morph_out_path
 
 
+def get_holding_and_threshold(calibration_result):
+    """Get holding and threshold currents from the MEModel.
+    
+    Args:
+        calibration_result (MEModelCalibrationResult or None): Calibration result entitysdk object
+    """
+    holding_current = None
+    threshold_current = None
+    if calibration_result is not None:
+        holding_current = calibration_result.holding_current
+        threshold_current = calibration_result.threshold_current
+    
+    return holding_current, threshold_current
+
+
 def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
     """Download MEModel
     
@@ -140,6 +155,8 @@ def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
         entity_id=memodel.emodel.id, entity_type=EModel, token=access_token
     )
 
+    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+
     # + 2 for hoc and morphology
     # len of ion_channel_models should be around 10 for most cases,
     # and always < 100, even for genetic models
@@ -160,7 +177,7 @@ def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
         hoc_path = hoc_future.result()
         morphology_path = morph_future.result()
 
-    return memodel, hoc_path, mechanisms_dir, morphology_path, memodel.holding_current, memodel.threshold_current
+    return memodel, hoc_path, mechanisms_dir, morphology_path, holding_current, threshold_current
 
 
 def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
