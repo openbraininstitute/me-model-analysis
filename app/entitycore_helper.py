@@ -265,9 +265,8 @@ def register_validations(client, access_token, memodel, validation_dict, val_det
             continue
         # do not register ValidationResult if it already exists
         # Once we are able to delete the ValidationResult, we should move to the following logic:
-        # if no ValidationResult exists, register a new one
-        # if one exists with exactly the same values, do nothing
-        # if one exists with different values, delete the old one and register a new one
+        # delete the ValidationResult if it already exists
+        # register the new one
         iterator = client.search_entity(
             entity_type=ValidationResult,
             query={"name": val_dict["name"], "validated_entity_id": memodel.id},
