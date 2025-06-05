@@ -1,27 +1,21 @@
 """Download MEModel and run MEModel validation"""
 
 import itertools
-import os
 import pathlib
 import subprocess
-
 from concurrent.futures import ThreadPoolExecutor
-from uuid import UUID
 
-from entitysdk.client import Client
-from entitysdk.common import ProjectContext
 from entitysdk.models.emodel import EModel
 from entitysdk.models.ion_channel_model import IonChannelModel
 from entitysdk.models.memodel import MEModel
 from entitysdk.models.memodelcalibrationresult import MEModelCalibrationResult
 from entitysdk.models.morphology import ReconstructionMorphology
 from entitysdk.models.validation_result import ValidationResult
-from obi_auth import get_token
 
 
 def download_hoc(emodel, client, access_token, hoc_dir="./hoc"):
     """Download hoc file
-    
+
     Args:
         emodel (EModel): EModel entitysdk object
         client (Client): EntitySDK client
@@ -75,7 +69,9 @@ def download_one_mechanism(ic, client, access_token, mechanisms_dir="./mechanism
     )
 
 
-def download_morphology(morphology, client, access_token, morph_dir="./morphology", file_type="asc"):
+def download_morphology(
+    morphology, client, access_token, morph_dir="./morphology", file_type="asc"
+):
     """Download morphology file
     Args:
         morphology (ReconstructionMorphology): Morphology entitysdk object
@@ -97,7 +93,7 @@ def download_morphology(morphology, client, access_token, morph_dir="./morpholog
             asset_path = asset.path
             break
     if asset_id is None:
-        ftype = file_type if file_type else ""
+        ftype = file_type or ""
         raise ValueError(f"No {ftype} file found in the morphology {morphology.name}.")
     morph_out_path = morph_dir / asset_path
     client.download_file(
@@ -112,7 +108,7 @@ def download_morphology(morphology, client, access_token, morph_dir="./morpholog
 
 def get_holding_and_threshold(calibration_result):
     """Get holding and threshold currents from the MEModel.
-    
+
     Args:
         calibration_result (MEModelCalibrationResult or None): Calibration result entitysdk object
     """
@@ -121,13 +117,13 @@ def get_holding_and_threshold(calibration_result):
     if calibration_result is not None:
         holding_current = calibration_result.holding_current
         threshold_current = calibration_result.threshold_current
-    
+
     return holding_current, threshold_current
 
 
 def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
     """Download MEModel
-    
+
     Args:
         client (Client): EntitySDK client
         access_token (str): access token for authentication
@@ -153,9 +149,7 @@ def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
 
     morphology = memodel.morphology
     # we have to get the emodel to get the ion channel models.
-    emodel = client.get_entity(
-        entity_id=memodel.emodel.id, entity_type=EModel, token=access_token
-    )
+    emodel = client.get_entity(entity_id=memodel.emodel.id, entity_type=EModel, token=access_token)
 
     holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
 
@@ -165,11 +159,13 @@ def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
     max_workers = len(emodel.ion_channel_models) + 2
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         hoc_future = executor.submit(download_hoc, emodel, client, access_token, "./hoc")
-        morph_future = executor.submit(download_morphology, morphology, client, access_token, "./morphology")
+        morph_future = executor.submit(
+            download_morphology, morphology, client, access_token, "./morphology"
+        )
         mechanisms_dir = pathlib.Path("./mechanisms")
         mechanisms_dir.mkdir(parents=True, exist_ok=True)
         executor.map(
-            download_one_mechanism, 
+            download_one_mechanism,
             emodel.ion_channel_models,
             itertools.repeat(client),
             itertools.repeat(access_token),
@@ -191,20 +187,20 @@ def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
         hold_curr (float or None): holding current
         thres_curr (float or None): threshold current
     """
-    hold_curr = hold_curr if hold_curr else 0.
+    hold_curr = hold_curr or 0.0
     # 0. is default value, will be overriden in validation
-    thres_curr = thres_curr if thres_curr else 0.
+    thres_curr = thres_curr or 0.0
 
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab import Cell
     from bluecellulab.circuit.circuit_access import EmodelProperties
 
     emodel_properties = EmodelProperties(
-        threshold_current=thres_curr,
-        holding_current=hold_curr,
-        AIS_scaler=1.
+        threshold_current=thres_curr, holding_current=hold_curr, AIS_scaler=1.0
     )
-    return Cell(hoc_path, morphology_path, template_format="v6", emodel_properties=emodel_properties)
+    return Cell(
+        hoc_path, morphology_path, template_format="v6", emodel_properties=emodel_properties
+    )
 
 
 def register_calibration(client, access_token, memodel, calibration_dict):
@@ -235,7 +231,7 @@ def register_calibration(client, access_token, memodel, calibration_dict):
         holding_current=calibration_dict["holding_current"],
         threshold_current=calibration_dict["rheobase"],
         rin=calibration_dict["rin"],
-        calibrated_entity_id = memodel.id,
+        calibrated_entity_id=memodel.id,
     )
     client.register_entity(
         entity=calibration_result,
@@ -278,9 +274,9 @@ def register_validations(client, access_token, memodel, validation_dict, val_det
 
         # register validation result
         validation_result = ValidationResult(
-            name = val_dict["name"],
-            passed = val_dict["passed"],
-            validated_entity_id = memodel.id,
+            name=val_dict["name"],
+            passed=val_dict["passed"],
+            validated_entity_id=memodel.id,
         )
         registered = client.register_entity(
             entity=validation_result,
@@ -296,10 +292,10 @@ def register_validations(client, access_token, memodel, validation_dict, val_det
                 file_content_type=f"application/{str(fig_path).split('.')[-1]}",
                 token=access_token,
             )
-        
+
         if val_dict["validation_details"]:
             # write down validation details to a file
-            val_details_fname = f"{val_dict['name'].replace(" ", "")}_validation_details.txt"
+            val_details_fname = f"{val_dict['name'].replace(' ', '')}_validation_details.txt"
             val_details_path = val_details_out_dir / val_details_fname
             with open(val_details_path, "w") as f:
                 f.write(val_dict["validation_details"])
