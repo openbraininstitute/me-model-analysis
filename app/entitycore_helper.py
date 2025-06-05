@@ -13,7 +13,9 @@ from entitysdk.common import ProjectContext
 from entitysdk.models.emodel import EModel
 from entitysdk.models.ion_channel_model import IonChannelModel
 from entitysdk.models.memodel import MEModel
+from entitysdk.models.memodelcalibrationresult import MEModelCalibrationResult
 from entitysdk.models.morphology import ReconstructionMorphology
+from entitysdk.models.validation_result import ValidationResult
 from obi_auth import get_token
 
 
@@ -205,8 +207,115 @@ def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
     return Cell(hoc_path, morphology_path, template_format="v6", emodel_properties=emodel_properties)
 
 
-def download_and_run_validation(client, access_token, memodel_id=None, memodel_name=None):
-    """Download MEModel and run MEModel validation
+def register_calibration(client, access_token, memodel, calibration_dict):
+    """Register the calibration result
+
+    Args:
+        client (Client): EntitySDK client
+        access_token (str): access token for authentication
+        memodel (MEModel): MEModel entitysdk object
+        calibration_dict (dict): should contain the fields 'holding_current', 'rheobase' and 'rin'
+    """
+    # do not register MEModelCalibrationResult if it already exists
+    # Once we are able to delete the CalibrationResult, we should move to the following logic:
+    # if no MEModelCalibrationResult exists, register a new one
+    # if one exists with exactly the same values, do nothing
+    # if one exists with different values, delete the old one and register a new one
+    iterator = client.search_entity(
+        entity_type=MEModelCalibrationResult,
+        query={"calibrated_entity_id": memodel.id},
+        token=access_token,
+    )
+    cal = iterator.first()
+    if cal is not None:
+        return
+
+    # register validation result
+    calibration_result = MEModelCalibrationResult(
+        holding_current=calibration_dict["holding_current"],
+        threshold_current=calibration_dict["rheobase"],
+        rin=calibration_dict["rin"],
+        calibrated_entity_id = memodel.id,
+    )
+    client.register_entity(
+        entity=calibration_result,
+        token=access_token,
+    )
+
+
+def register_validations(client, access_token, memodel, validation_dict, val_details_out_dir=None):
+    """Register the validation results, with figures and validation details as assets
+
+    Args:
+        client (Client): EntitySDK client
+        access_token (str): access token for authentication
+        memodel (MEModel): MEModel entitysdk object
+        validation_dict (dict): dict containing the validation results
+        val_details_out_dir (str or Pathlib.Path or None): directory to save
+            the validation details files.
+    """
+    if val_details_out_dir is None:
+        val_details_out_dir = pathlib.Path("./validation_details") / memodel.name
+    else:
+        val_details_out_dir = pathlib.Path(val_details_out_dir)
+    val_details_out_dir.mkdir(parents=True, exist_ok=True)
+    for key, val_dict in validation_dict.items():
+        # not a validation
+        if key == "memodel_properties":
+            continue
+        # do not register ValidationResult if it already exists
+        # Once we are able to delete the ValidationResult, we should move to the following logic:
+        # if no ValidationResult exists, register a new one
+        # if one exists with exactly the same values, do nothing
+        # if one exists with different values, delete the old one and register a new one
+        iterator = client.search_entity(
+            entity_type=ValidationResult,
+            query={"name": val_dict["name"], "validated_entity_id": memodel.id},
+            token=access_token,
+        )
+        cal = iterator.first()
+        if cal is not None:
+            continue
+
+        # register validation result
+        validation_result = ValidationResult(
+            name = val_dict["name"],
+            passed = val_dict["passed"],
+            validated_entity_id = memodel.id,
+        )
+        registered = client.register_entity(
+            entity=validation_result,
+            token=access_token,
+        )
+
+        # register figure(s) as asset(s)
+        for fig_path in val_dict["figures"]:
+            client.upload_file(
+                entity_id=registered.id,
+                entity_type=ValidationResult,
+                file_path=str(fig_path),
+                file_content_type=f"application/{str(fig_path).split('.')[-1]}",
+                token=access_token,
+            )
+        
+        if val_dict["validation_details"]:
+            # write down validation details to a file
+            val_details_fname = f"{val_dict['name'].replace(" ", "")}_validation_details.txt"
+            val_details_path = val_details_out_dir / val_details_fname
+            with open(val_details_path, "w") as f:
+                f.write(val_dict["validation_details"])
+            # register validation details as asset
+            client.upload_file(
+                entity_id=registered.id,
+                entity_type=ValidationResult,
+                file_path=str(val_details_path),
+                file_content_type="application/txt",
+                token=access_token,
+            )
+
+
+def run_and_save_calibration_validation(client, access_token, memodel_id=None, memodel_name=None):
+    """Download MEModel, run MEModel validation, and save validation and calibration results.
 
     Args:
         client (Client): EntitySDK client
@@ -226,4 +335,5 @@ def download_and_run_validation(client, access_token, memodel_id=None, memodel_n
 
     validation_dict = run_validations(cell, memodel.name, output_dir="./figures")
 
-    return validation_dict
+    register_calibration(client, access_token, memodel, validation_dict["memodel_properties"])
+    register_validations(client, access_token, memodel, validation_dict)
