@@ -12,6 +12,8 @@ from entitysdk.models.memodelcalibrationresult import MEModelCalibrationResult
 from entitysdk.models.morphology import ReconstructionMorphology
 from entitysdk.models.validation_result import ValidationResult
 
+from app.logger import L
+
 
 def download_hoc(emodel, client, access_token, hoc_dir="./hoc"):
     """Download hoc file
@@ -85,16 +87,25 @@ def download_morphology(
         raise ValueError(f"No assets found in the morphology {morphology.name}.")
     morph_dir = pathlib.Path(morph_dir)
     morph_dir.mkdir(parents=True, exist_ok=True)
+
     asset_id = None
     asset_path = None
+    if not morphology.assets:
+        raise ValueError(f"No file found in the morphology {morphology.name}.")
     for asset in morphology.assets:
         if file_type is None or file_type in asset.content_type:
             asset_id = asset.id
             asset_path = asset.path
             break
     if asset_id is None:
-        ftype = file_type or ""
-        raise ValueError(f"No {ftype} file found in the morphology {morphology.name}.")
+        L.warning(
+            "No %s file found in the morphology %s, will select the first one.",
+            file_type,
+            morphology.name,
+        )
+        asset_id = morphology.assets[0].id
+        asset_path = morphology.assets[0].path
+
     morph_out_path = morph_dir / asset_path
     client.download_file(
         asset_id=asset_id,
