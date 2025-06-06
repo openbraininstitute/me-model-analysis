@@ -92,11 +92,26 @@ def download_morphology(
     asset_path = None
     if not morphology.assets:
         raise ValueError(f"No file found in the morphology {morphology.name}.")
+    # try to fetch morphology with the specified file type
     for asset in morphology.assets:
         if file_type is None or file_type in asset.content_type:
             asset_id = asset.id
             asset_path = asset.path
             break
+    # fallback #1: we expect at least a asc or swc file
+    if asset_id is None:
+        for asset in morphology.assets:
+            if 'asc' in asset.content_type or 'swc' in asset.content_type:
+                L.warning(
+                    "No %s file found in the morphology %s, will select the one with %s.",
+                    file_type,
+                    morphology.name,
+                    asset.content_type,
+                )
+                asset_id = asset.id
+                asset_path = asset.path
+                break
+    # fallback #2: we take the first asset
     if asset_id is None:
         L.warning(
             "No %s file found in the morphology %s, will select the first one.",
