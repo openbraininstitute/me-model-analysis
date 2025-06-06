@@ -121,31 +121,20 @@ def get_holding_and_threshold(calibration_result):
     return holding_current, threshold_current
 
 
-def download_memodel(client, access_token, memodel_id=None, memodel_name=None):
+def download_memodel(client, access_token, memodel_id):
     """Download MEModel
 
     Args:
         client (Client): EntitySDK client
         access_token (str): access token for authentication
-        memodel_id (str or None): id of the MEModel to download
-        memodel_name (str or None): name of the MEModel to download
+        memodel_id (str): id of the MEModel to download
     """
-    if memodel_id is None and memodel_name is None:
-        raise ValueError("Either memodel_id or memodel_name must be provided.")
-    if memodel_id is not None:
-        memodel = client.get_entity(
-            entity_type=MEModel,
-            entity_id=memodel_id,
-            token=access_token,
-        )
-    else:
-        iterator = client.search_entity(
-            entity_type=MEModel,
-            query={"name": memodel_name},
-            token=access_token,
-            limit=1,
-        )
-        memodel = next(iterator)
+
+    memodel = client.get_entity(
+        entity_type=MEModel,
+        entity_id=memodel_id,
+        token=access_token,
+    )
 
     morphology = memodel.morphology
     # we have to get the emodel to get the ion channel models.
@@ -309,17 +298,16 @@ def register_validations(client, access_token, memodel, validation_dict, val_det
             )
 
 
-def run_and_save_calibration_validation(client, access_token, memodel_id=None, memodel_name=None):
+def run_and_save_calibration_validation(client, access_token, memodel_id):
     """Download MEModel, run MEModel validation, and save validation and calibration results.
 
     Args:
         client (Client): EntitySDK client
         access_token (str): access token for authentication
-        memodel_id (str or None): id of the MEModel to download
-        memodel_name (str or None): name of the MEModel to download
+        memodel_id (str): id of the MEModel to download
     """
     memodel, hoc_path, mechanisms_dir, morphology_path, hold_curr, thres_curr = download_memodel(
-        client, access_token, memodel_id=memodel_id, memodel_name=memodel_name
+        client, access_token, memodel_id
     )
     # compile the mechanisms
     subprocess.run(["nrnivmodl", str(mechanisms_dir)], check=True)
