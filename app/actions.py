@@ -1,39 +1,37 @@
 """Actions."""
 
+from typing import Any
+
+from entitysdk import Client
+
+from app.config import settings
+from app.entitycore_helper import (
+    run_and_save_calibration_validation as run_me_model_analysis_entitycore,
+)
 from app.logger import L
-from app.nexus_helper import run_me_model_analysis
-
-TOKEN = None
-MODEL_SELF_URL = None
+from app.nexus_helper import run_me_model_analysis as run_me_model_analysis_nexus
+from app.types import ModelAnalysisRequest, ModelOrigin
 
 
-def set_token(token):
-    """Set token to fetch model in the future."""
-    global TOKEN  # pylint: disable=global-statement
-    L.debug("Setting token...")
-    TOKEN = token.replace("Bearer ", "")
-
-
-def set_model(values):
-    """Set model."""
-    L.debug("Setting model: %s", values)
-    model_self_url = values.get("model_self_url")
-
-    if model_self_url is None:
-        raise Exception("Missing model url")
-
-    global MODEL_SELF_URL  # pylint: disable=global-statement
-    MODEL_SELF_URL = model_self_url
-    return True
-
-
-def run_analysis(values):
+def run_analysis(values: dict) -> Any:
     """Run analysis."""
-    L.info("Running analysis %s", values)
-    try:
-        run_me_model_analysis(MODEL_SELF_URL, TOKEN)
-    except Exception as e:
-        L.exception(e)
-        raise
+    request = ModelAnalysisRequest(**values)
+    access_token = request.access_token
+    config = request.config
+
+    if config.model_origin == ModelOrigin.ENTITYCORE:
+        client = Client(
+            environment=settings.DEPLOYMENT_ENV,
+            project_context=config.project_context,
+            token_manager=access_token,
+        )
+        run_me_model_analysis_entitycore(client, config.model_id)
+
+    elif config.model_origin == ModelOrigin.NEXUS:
+        run_me_model_analysis_nexus(config.self_url, access_token)
+
+    else:
+        msg = "Unsupported model origin"
+        raise ValueError(msg)
+
     L.info("Analysis done")
-    return True

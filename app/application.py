@@ -137,16 +137,15 @@ def run(
 ) -> Response:
     """Run analysis."""
     if authorization is None:
-        raise Exception("Missing authorization header")
+        err_msg = "Missing authorization header"
+        raise ValueError(err_msg)
 
-    message_handler({"token": authorization.replace("Bearer ", "")})
-    message_handler(
+    background_tasks.add_task(
+        message_handler,
         {
-            "cmd": "set_model",
-            "data": {"model_self_url": msg["model_self_url"]},
-        }
+            "cmd": "run_analysis",
+            "data": {"config": msg, "access_token": authorization.replace("Bearer ", "")},
+        },
     )
-
-    background_tasks.add_task(process_message, {"cmd": "run_analysis", "data": {}})
 
     return Response(status_code=204)
