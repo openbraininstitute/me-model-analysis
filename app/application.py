@@ -111,7 +111,7 @@ def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     # reset idle shutdown timer
     scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)
     background_tasks.add_task(process_message, msg)
-    return JSONResponse(status_code=202, content={"message": "Processing message"})
+    return JSONResponse(status_code=202, content={"cmd": f"{msg['cmd']}_processing"})
 
 
 @app.post("/shutdown")
