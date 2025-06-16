@@ -5,6 +5,7 @@ import pathlib
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
+from entitysdk import Client
 from entitysdk.models.emodel import EModel
 from entitysdk.models.ion_channel_model import IonChannelModel
 from entitysdk.models.memodel import MEModel
@@ -67,9 +68,7 @@ def download_one_mechanism(ic, client, mechanisms_dir="./mechanisms"):
     )
 
 
-def download_morphology(
-    morphology, client, morph_dir="./morphology", file_type="asc"
-):
+def download_morphology(morphology, client, morph_dir="./morphology", file_type="asc"):
     """Download morphology file
     Args:
         morphology (ReconstructionMorphology): Morphology entitysdk object
@@ -96,7 +95,7 @@ def download_morphology(
     # fallback #1: we expect at least a asc or swc file
     if asset_id is None:
         for asset in morphology.assets:
-            if 'asc' in asset.content_type or 'swc' in asset.content_type:
+            if "asc" in asset.content_type or "swc" in asset.content_type:
                 L.warning(
                     "No %s file found in the morphology %s, will select the one with %s.",
                     file_type,
@@ -166,9 +165,7 @@ def download_memodel(client, memodel_id):
     max_workers = len(emodel.ion_channel_models) + 2
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         hoc_future = executor.submit(download_hoc, emodel, client, "./hoc")
-        morph_future = executor.submit(
-            download_morphology, morphology, client, "./morphology"
-        )
+        morph_future = executor.submit(download_morphology, morphology, client, "./morphology")
         mechanisms_dir = pathlib.Path("./mechanisms")
         mechanisms_dir.mkdir(parents=True, exist_ok=True)
         executor.map(
@@ -307,7 +304,7 @@ def register_validations(client, memodel, validation_dict, val_details_out_dir=N
             )
 
 
-def run_and_save_calibration_validation(client, memodel_id):
+def run_and_save_calibration_validation(client: Client, memodel_id: str):
     """Download MEModel, run MEModel validation, and save validation and calibration results.
 
     Args:
