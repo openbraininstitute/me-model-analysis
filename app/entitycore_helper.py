@@ -215,5 +215,5 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
 
     validation_dict = run_validations(cell, memodel.name, output_dir="./figures")
 
-    # register_calibration(client, memodel, validation_dict["memodel_properties"])
-    # register_validations(client, memodel, validation_dict)
+    register_calibration(client, memodel, validation_dict["memodel_properties"])
+    register_validations(client, memodel, validation_dict)
