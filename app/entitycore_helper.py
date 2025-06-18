@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from entitysdk import Client
 from entitysdk.downloaders.emodel import download_hoc
 from entitysdk.downloaders.ion_channel_model import download_ion_channel_mechanism
+from entitysdk.downloaders.memodel import download_memodel
 from entitysdk.downloaders.morphology import download_morphology
 from entitysdk.models.emodel import EModel
 from entitysdk.models.memodel import MEModel
@@ -30,47 +31,6 @@ def get_holding_and_threshold(calibration_result):
         threshold_current = calibration_result.threshold_current
 
     return holding_current, threshold_current
-
-
-def download_memodel(client, memodel_id):
-    """Download MEModel
-
-    Args:
-        client (Client): EntitySDK client
-        memodel_id (str): id of the MEModel to download
-    """
-
-    memodel = client.get_entity(
-        entity_type=MEModel,
-        entity_id=memodel_id,
-    )
-
-    morphology = memodel.morphology
-    # we have to get the emodel to get the ion channel models.
-    emodel = client.get_entity(entity_id=memodel.emodel.id, entity_type=EModel)
-
-    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
-
-    # + 2 for hoc and morphology
-    # len of ion_channel_models should be around 10 for most cases,
-    # and always < 100, even for genetic models
-    max_workers = len(emodel.ion_channel_models) + 2
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        hoc_future = executor.submit(download_hoc, client, emodel, "./hoc")
-        morph_future = executor.submit(download_morphology, client, morphology, "./morphology", "asc")
-        mechanisms_dir = pathlib.Path("./mechanisms")
-        mechanisms_dir.mkdir(parents=True, exist_ok=True)
-        executor.map(
-            download_ion_channel_mechanism,
-            itertools.repeat(client),
-            emodel.ion_channel_models,
-            itertools.repeat(mechanisms_dir),
-        )
-
-        hoc_path = hoc_future.result()
-        morphology_path = morph_future.result()
-
-    return memodel, hoc_path, mechanisms_dir, morphology_path, holding_current, threshold_current
 
 
 def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
@@ -203,13 +163,22 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
     """
-    memodel, hoc_path, mechanisms_dir, morphology_path, hold_curr, thres_curr = download_memodel(
-        client, memodel_id
+    memodel = client.get_entity(
+        entity_type=MEModel,
+        entity_id=memodel_id,
     )
-    # compile the mechanisms
-    subprocess.run(["nrnivmodl", str(mechanisms_dir)], check=True)
+    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
+    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
 
-    cell = create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr)
+    # compile the mechanisms
+    subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
+
+    cell = create_bluecellulab_cell(
+        downloaded_memodel.hoc_path,
+        downloaded_memodel.morphology_path,
+        holding_current,
+        threshold_current
+    )
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
 
