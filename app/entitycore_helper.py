@@ -6,123 +6,16 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 from entitysdk import Client
+from entitysdk.downloaders.emodel import download_hoc
+from entitysdk.downloaders.ion_channel_model import download_ion_channel_mechanism
+from entitysdk.downloaders.memodel import download_memodel
+from entitysdk.downloaders.morphology import download_morphology
 from entitysdk.models.emodel import EModel
-from entitysdk.models.ion_channel_model import IonChannelModel
 from entitysdk.models.memodel import MEModel
 from entitysdk.models.memodelcalibrationresult import MEModelCalibrationResult
-from entitysdk.models.morphology import ReconstructionMorphology
 from entitysdk.models.validation_result import ValidationResult
 
 from app.logger import L
-
-
-def download_hoc(emodel, client, hoc_dir="./hoc"):
-    """Download hoc file
-
-    Args:
-        emodel (EModel): EModel entitysdk object
-        client (Client): EntitySDK client
-        hoc_dir (str or Pathlib.Path): directory to save the hoc file
-    """
-    asset_id = None
-    asset_path = None
-    # Download the emodel hoc file
-    if emodel.assets is None:
-        raise ValueError(f"No assets found in the emodel {emodel.name}.")
-    for asset in emodel.assets:
-        if "hoc" in asset.content_type:
-            asset_id = asset.id
-            asset_path = asset.path
-    if asset_id is None:
-        raise ValueError(f"No hoc file found in the emodel {emodel.name}.")
-    hoc_dir = pathlib.Path(hoc_dir)
-    hoc_dir.mkdir(parents=True, exist_ok=True)
-    hoc_output_path = hoc_dir / asset_path
-    client.download_file(
-        asset_id=asset_id,
-        entity_id=emodel.id,
-        entity_type=EModel,
-        output_path=hoc_output_path,
-    )
-    return hoc_output_path
-
-
-def download_one_mechanism(ic, client, mechanisms_dir="./mechanisms"):
-    """Download one mechanism file
-
-    Args:
-        ic (IonChannelModel): IonChannelModel entitysdk object
-        client (Client): EntitySDK client
-        mechanisms_dir (str or Pathlib.Path): directory to save the mechanism file
-    """
-    if not ic.assets:
-        raise ValueError(f"No assets found in the ion channel model {ic.name}.")
-    asset = ic.assets[0]
-    asset_id = asset.id
-    asset_path = asset.path
-    client.download_file(
-        asset_id=asset_id,
-        entity_id=ic.id,
-        entity_type=IonChannelModel,
-        output_path=mechanisms_dir / asset_path,
-    )
-
-
-def download_morphology(morphology, client, morph_dir="./morphology", file_type="asc"):
-    """Download morphology file
-    Args:
-        morphology (ReconstructionMorphology): Morphology entitysdk object
-        client (Client): EntitySDK client
-        morph_dir (str or Pathlib.Path): directory to save the morphology file
-        file_type (str or None): type of the morphology file (asc, swc or h5).
-            Will take the first one if None.
-    """
-    if morphology.assets is None:
-        raise ValueError(f"No assets found in the morphology {morphology.name}.")
-    morph_dir = pathlib.Path(morph_dir)
-    morph_dir.mkdir(parents=True, exist_ok=True)
-
-    asset_id = None
-    asset_path = None
-    if not morphology.assets:
-        raise ValueError(f"No file found in the morphology {morphology.name}.")
-    # try to fetch morphology with the specified file type
-    for asset in morphology.assets:
-        if file_type is None or file_type in asset.content_type:
-            asset_id = asset.id
-            asset_path = asset.path
-            break
-    # fallback #1: we expect at least a asc or swc file
-    if asset_id is None:
-        for asset in morphology.assets:
-            if "asc" in asset.content_type or "swc" in asset.content_type:
-                L.warning(
-                    "No %s file found in the morphology %s, will select the one with %s.",
-                    file_type,
-                    morphology.name,
-                    asset.content_type,
-                )
-                asset_id = asset.id
-                asset_path = asset.path
-                break
-    # fallback #2: we take the first asset
-    if asset_id is None:
-        L.warning(
-            "No %s file found in the morphology %s, will select the first one.",
-            file_type,
-            morphology.name,
-        )
-        asset_id = morphology.assets[0].id
-        asset_path = morphology.assets[0].path
-
-    morph_out_path = morph_dir / asset_path
-    client.download_file(
-        asset_id=asset_id,
-        entity_id=morphology.id,
-        entity_type=ReconstructionMorphology,
-        output_path=morph_out_path,
-    )
-    return morph_out_path
 
 
 def get_holding_and_threshold(calibration_result):
@@ -138,47 +31,6 @@ def get_holding_and_threshold(calibration_result):
         threshold_current = calibration_result.threshold_current
 
     return holding_current, threshold_current
-
-
-def download_memodel(client, memodel_id):
-    """Download MEModel
-
-    Args:
-        client (Client): EntitySDK client
-        memodel_id (str): id of the MEModel to download
-    """
-
-    memodel = client.get_entity(
-        entity_type=MEModel,
-        entity_id=memodel_id,
-    )
-
-    morphology = memodel.morphology
-    # we have to get the emodel to get the ion channel models.
-    emodel = client.get_entity(entity_id=memodel.emodel.id, entity_type=EModel)
-
-    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
-
-    # + 2 for hoc and morphology
-    # len of ion_channel_models should be around 10 for most cases,
-    # and always < 100, even for genetic models
-    max_workers = len(emodel.ion_channel_models) + 2
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        hoc_future = executor.submit(download_hoc, emodel, client, "./hoc")
-        morph_future = executor.submit(download_morphology, morphology, client, "./morphology")
-        mechanisms_dir = pathlib.Path("./mechanisms")
-        mechanisms_dir.mkdir(parents=True, exist_ok=True)
-        executor.map(
-            download_one_mechanism,
-            emodel.ion_channel_models,
-            itertools.repeat(client),
-            itertools.repeat(mechanisms_dir),
-        )
-
-        hoc_path = hoc_future.result()
-        morphology_path = morph_future.result()
-
-    return memodel, hoc_path, mechanisms_dir, morphology_path, holding_current, threshold_current
 
 
 def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
@@ -311,13 +163,22 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
     """
-    memodel, hoc_path, mechanisms_dir, morphology_path, hold_curr, thres_curr = download_memodel(
-        client, memodel_id
+    memodel = client.get_entity(
+        entity_type=MEModel,
+        entity_id=memodel_id,
     )
-    # compile the mechanisms
-    subprocess.run(["nrnivmodl", str(mechanisms_dir)], check=True)
+    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
+    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
 
-    cell = create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr)
+    # compile the mechanisms
+    subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
+
+    cell = create_bluecellulab_cell(
+        downloaded_memodel.hoc_path,
+        downloaded_memodel.morphology_path,
+        holding_current,
+        threshold_current
+    )
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
 
