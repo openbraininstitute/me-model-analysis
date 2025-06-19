@@ -77,7 +77,7 @@ def process_message(msg: dict) -> None:
     conn = settings.APIGW_CONN_ID
 
     L.info(f"apigw={apigw} region={region} conn={conn}")
-    L.info(f"processing msg={msg} ...")
+    L.info(f"processing msg {json.dumps(msg)}")
 
     try:
         result = message_handler(msg)
