@@ -20,6 +20,7 @@ def run_analysis(values: dict) -> Any:
     config = request.config
 
     if config.model_origin == ModelOrigin.ENTITYCORE:
+        L.info(f"Init EntitySDK client with ctx project_id: {config.project_context.project_id}")
         client = Client(
             environment=settings.DEPLOYMENT_ENV,
             project_context=config.project_context,

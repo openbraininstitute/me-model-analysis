@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APIGW_REGION: str | None = None
     APIGW_CONN_ID: str | None = None
 
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = "DEBUG"
     LOG_FORMAT: str = (
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<level>{level: <8}</level> | "

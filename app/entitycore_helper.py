@@ -167,17 +167,27 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         entity_type=MEModel,
         entity_id=memodel_id,
     )
+
+    L.debug(f"Found ME-model with id: {memodel.id}")
+
     downloaded_memodel = download_memodel(client, memodel, output_dir=".")
+
+    L.debug("Downloaded ME-model")
+
     holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+
+    L.debug(f"Got holding current: {holding_current} and threshold current: {threshold_current}")
 
     # compile the mechanisms
     subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
+
+    L.debug("Compiled mechanisms")
 
     cell = create_bluecellulab_cell(
         downloaded_memodel.hoc_path,
         downloaded_memodel.morphology_path,
         holding_current,
-        threshold_current
+        threshold_current,
     )
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
