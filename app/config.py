@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APIGW_REGION: str | None = None
     APIGW_CONN_ID: str | None = None
 
-    LOG_LEVEL: str = "DEBUG"
+    LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = (
         "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
         "<level>{level: <8}</level> | "
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     LOG_DIAGNOSE: bool = False
     LOG_ENQUEUE: bool = False
     LOG_CATCH: bool = True
-    LOG_STANDARD_LOGGER: dict[str, str] = {"root": "DEBUG"}
+    LOG_STANDARD_LOGGER: dict[str, str] = {"root": "INFO"}
 
 
 settings = Settings()

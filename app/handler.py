@@ -1,6 +1,7 @@
 """Handler."""
 
 from app.actions import run_analysis
+from app.logger import L
 
 function_mapping = {
     "run_analysis": run_analysis,
@@ -11,18 +12,20 @@ function_mapping = {
 def message_handler(msg):
     """Handle message."""
     if "cmd" not in msg:
+        L.info("No command in msg")
         return {"message": "Service up"}
 
     command_name = msg["cmd"]
     data = msg["data"]
 
     if command_name not in function_mapping:
+        L.warning(f"Unknown command: {command_name}")
         raise Exception("Unknown command: " + command_name)
 
     try:
         result = function_mapping[command_name](data)
     except Exception as e:
-        print(e)
+        L.error(e)
         return {"cmd": f"{command_name}_error"}
 
     return {"cmd": f"{command_name}_done", "data": result}
