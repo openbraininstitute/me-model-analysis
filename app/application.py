@@ -1,6 +1,5 @@
 """Main."""
 
-import json
 import os
 import signal
 from contextlib import asynccontextmanager
@@ -8,11 +7,11 @@ from sched import scheduler
 from threading import Thread
 from typing import Annotated
 
-import boto3
 from botocore.exceptions import ClientError
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, Response
 from fastapi.responses import JSONResponse
 
+from app.apigw import apigw_client, send_message
 from app.config import settings
 from app.handler import message_handler
 from app.logger import L
@@ -44,40 +43,20 @@ async def lifespan(_app: FastAPI):
     if settings.APIGW_ENDPOINT is None:
         return
 
-    apigw = boto3.client(
-        "apigatewaymanagementapi",
-        endpoint_url=settings.APIGW_ENDPOINT,
-        region_name=settings.APIGW_REGION,
-    )
     try:
-        apigw.delete_connection(ConnectionId=settings.APIGW_CONN_ID)
+        apigw_client.delete_connection(ConnectionId=settings.APIGW_CONN_ID)
     except ClientError:
         L.exception("Couldn't post to connection")
-    except apigw.exceptions.GoneException:
+    except apigw_client.exceptions.GoneException:
         L.exception("Connection is gone.")
 
 
 app = FastAPI(lifespan=lifespan)
 
 
-def send_message(apigw, conn, data):
-    """Send message to frontend."""
-    try:
-        apigw.post_to_connection(Data=json.dumps(data), ConnectionId=conn)
-    except ClientError:
-        L.exception("Couldn't post to connection")
-    except apigw.exceptions.GoneException:
-        L.exception("Connection is gone.")
-
-
 def process_message(msg: dict) -> None:
     """Call different functions based on message."""
-    apigw = settings.APIGW_ENDPOINT
-    region = settings.APIGW_REGION
-    conn = settings.APIGW_CONN_ID
-
-    L.info(f"apigw={apigw} region={region} conn={conn}")
-    L.info(f"processing msg {json.dumps(msg)}")
+    L.info("processing msg")
 
     try:
         result = message_handler(msg)
@@ -85,12 +64,7 @@ def process_message(msg: dict) -> None:
         L.exception("Error during processing msg=%s: %s", msg, e)
         raise Exception(e) from e
 
-    if apigw is None:
-        L.info("No apigw endpoint, skipping message send.")
-        return
-
-    apigw = boto3.client("apigatewaymanagementapi", endpoint_url=apigw, region_name=region)
-    send_message(apigw, conn, result)
+    send_message(result)
 
 
 @app.post("/init")

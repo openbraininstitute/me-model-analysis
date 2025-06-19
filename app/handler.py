@@ -12,7 +12,6 @@ function_mapping = {
 def message_handler(msg):
     """Handle message."""
     if "cmd" not in msg:
-        L.info("No command in msg")
         return {"message": "Service up"}
 
     command_name = msg["cmd"]
