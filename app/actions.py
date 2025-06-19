@@ -13,6 +13,7 @@ from app.nexus_helper import run_me_model_analysis as run_me_model_analysis_nexu
 from app.types import ModelAnalysisRequest, ModelOrigin
 
 
+@L.catch
 def run_analysis(values: dict) -> Any:
     """Run analysis."""
     request = ModelAnalysisRequest(**values)
