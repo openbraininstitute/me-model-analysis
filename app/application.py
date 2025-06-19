@@ -60,11 +60,9 @@ def process_message(msg: dict) -> None:
 
     try:
         result = message_handler(msg)
+        send_message(result)
     except Exception as e:
         L.exception("Error during processing msg=%s: %s", msg, e)
-        raise Exception(e) from e
-
-    send_message(result)
 
 
 @app.post("/init")
