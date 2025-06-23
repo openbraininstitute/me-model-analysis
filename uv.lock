@@ -629,14 +629,14 @@ sdist = { url = "https://files.pythonhosted.org/packages/32/45/e4ace7881220bdf03
 
 [[package]]
 name = "entitysdk"
-version = "0.5.1"
+version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/4e/3e8c1adcaaefa218297f88dc537749f36f71284a9788cb002d33313c4627/entitysdk-0.5.1.tar.gz", hash = "sha256:1f01e9757eb155f7dd3cc7f16c858c49db72bdc57232d03d52db9f56e9d76cf3", size = 54691, upload-time = "2025-06-18T12:52:38.853Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/bd/926eea53a0136c6904ef996ce1556346b6be813dc3c63f057ebfc052d771/entitysdk-0.6.0.tar.gz", hash = "sha256:77d7c5a30ba1ce4821a795323a0fdee2e856f82d00a72ef69fccd7c472e73484", size = 58214, upload-time = "2025-06-19T13:27:09.843Z" }
 
 [[package]]
 name = "executing"
@@ -1293,7 +1293,7 @@ requires-dist = [
     { name = "bluecellulab", specifier = ">=2.6.51" },
     { name = "bluepyemodel", extras = ["all"], specifier = "==1.0.24" },
     { name = "boto3" },
-    { name = "entitysdk", specifier = ">=0.5.0" },
+    { name = "entitysdk", specifier = "==0.6.0" },
     { name = "fastapi" },
     { name = "loguru" },
     { name = "nexusforge", specifier = "==0.8.2" },
