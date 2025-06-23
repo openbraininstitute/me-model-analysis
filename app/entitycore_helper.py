@@ -170,10 +170,11 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
     )
     downloaded_memodel = download_memodel(client, memodel, output_dir=".")
     holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+
     L.info(f"Model holding current: {holding_current}")
     L.info(f"Model threshold current: {threshold_current}")
 
-    L.info("Compiling mechanisms"))
+    L.info("Compiling mechanisms")
     subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
 
     cell = create_bluecellulab_cell(
