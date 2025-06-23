@@ -91,7 +91,7 @@ def register_calibration(client, memodel, calibration_dict):
     )
 
 
-def register_validations(client, memodel, validation_dict, val_details_out_dir=None):
+def register_validations(client: Client, memodel, validation_dict, val_details_out_dir=None):
     """Register the validation results, with figures and validation details as assets
 
     Args:
@@ -152,7 +152,7 @@ def register_validations(client, memodel, validation_dict, val_details_out_dir=N
                 entity_id=registered.id,
                 entity_type=ValidationResult,
                 file_path=str(val_details_path),
-                file_content_type="application/txt",
+                file_content_type="text/plain",
             )
 
 
@@ -177,7 +177,7 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         downloaded_memodel.hoc_path,
         downloaded_memodel.morphology_path,
         holding_current,
-        threshold_current
+        threshold_current,
     )
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
