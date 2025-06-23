@@ -17,6 +17,7 @@ dependencies = [
     "uvicorn[standard]",
     "bluecellulab>=2.6.51",
     "entitysdk==0.6.1",
+    "psutil>=7.0.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
