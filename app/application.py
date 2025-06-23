@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import threading
 from contextlib import asynccontextmanager
 from sched import scheduler
 from threading import Thread
@@ -76,9 +77,6 @@ def process_message(msg: dict) -> None:
     region = settings.APIGW_REGION
     conn = settings.APIGW_CONN_ID
 
-    L.info(f"apigw={apigw} region={region} conn={conn}")
-    L.info(f"processing msg={msg} ...")
-
     try:
         result = message_handler(msg)
     except Exception as e:
@@ -91,6 +89,11 @@ def process_message(msg: dict) -> None:
 
     apigw = boto3.client("apigatewaymanagementapi", endpoint_url=apigw, region_name=region)
     send_message(apigw, conn, result)
+
+
+def process_message_threaded(*args) -> None:
+    """Process message in background."""
+    threading.Thread(target=process_message, args=args).start()
 
 
 @app.post("/init")
@@ -110,7 +113,7 @@ def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     L.info("SVC DEFAULT msg=%s", msg)
     # reset idle shutdown timer
     scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)
-    background_tasks.add_task(process_message, msg)
+    background_tasks.add_task(process_message_threaded, msg)
 
     response = (
         {"cmd": f"{msg['cmd']}_processing"} if "cmd" in msg else {"message": "Processing message"}
@@ -145,12 +148,11 @@ def run(
         err_msg = "Missing authorization header"
         raise ValueError(err_msg)
 
-    background_tasks.add_task(
-        message_handler,
+    message_handler(
         {
             "cmd": "run_analysis",
             "data": {"config": msg, "access_token": authorization.replace("Bearer ", "")},
-        },
+        }
     )
 
     return Response(status_code=204)
