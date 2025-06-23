@@ -23,7 +23,7 @@ def message_handler(msg):
     try:
         result = function_mapping[command_name](data)
     except Exception as e:
-        L.error(e)
+        L.exception(e)
         return {"cmd": f"{command_name}_error"}
 
     return {"cmd": f"{command_name}_done", "data": result}
