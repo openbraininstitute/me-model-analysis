@@ -93,7 +93,6 @@ def process_message(msg: dict) -> None:
 @app.post("/init")
 def init(msg: dict):
     """Initialize service."""
-    L.info("INIT msg=%s", msg.keys())
     try:
         message_handler(msg)
     except Exception as e:
@@ -104,9 +103,7 @@ def init(msg: dict):
 @app.post("/default")
 def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     """Process message."""
-    L.info("SVC DEFAULT msg=%s", msg)
-    # reset idle shutdown timer
-    scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)
+    scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)  # reset idle shutdown timer
     background_tasks.add_task(process_message, msg)
 
     response = (
