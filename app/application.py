@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import threading
 from contextlib import asynccontextmanager
 from sched import scheduler
 from threading import Thread
@@ -20,6 +21,11 @@ from app.logger import L
 SHUTDOWN_TIMER = 1800  # sec (30 min)
 
 scheduler = scheduler()
+
+
+def process_message_threaded(*args) -> None:
+    """Process message in background."""
+    threading.Thread(target=process_message, args=args).start()
 
 
 def _shutdown_timer() -> None:
@@ -76,9 +82,6 @@ def process_message(msg: dict) -> None:
     region = settings.APIGW_REGION
     conn = settings.APIGW_CONN_ID
 
-    L.info(f"apigw={apigw} region={region} conn={conn}")
-    L.info(f"processing msg={msg} ...")
-
     try:
         result = message_handler(msg)
     except Exception as e:
@@ -96,7 +99,6 @@ def process_message(msg: dict) -> None:
 @app.post("/init")
 def init(msg: dict):
     """Initialize service."""
-    L.info("INIT msg=%s", msg.keys())
     try:
         message_handler(msg)
     except Exception as e:
@@ -107,10 +109,8 @@ def init(msg: dict):
 @app.post("/default")
 def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     """Process message."""
-    L.info("SVC DEFAULT msg=%s", msg)
-    # reset idle shutdown timer
-    scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)
-    background_tasks.add_task(process_message, msg)
+    scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)  # reset idle shutdown timer
+    background_tasks.add_task(process_message_threaded, msg)
 
     response = (
         {"cmd": f"{msg['cmd']}_processing"} if "cmd" in msg else {"message": "Processing message"}

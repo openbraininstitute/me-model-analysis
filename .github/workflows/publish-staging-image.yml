@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - fix/threading-lock
   workflow_dispatch:
 
 concurrency:

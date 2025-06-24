@@ -1,9 +1,10 @@
 """Handler."""
 
-from app.actions import run_analysis
+from app.actions import run_analysis_mp
+from app.logger import L
 
 function_mapping = {
-    "run_analysis": run_analysis,
+    "run_analysis": run_analysis_mp,
     "ping": lambda _: {"message": "Service up"},
 }
 
@@ -22,7 +23,7 @@ def message_handler(msg):
     try:
         result = function_mapping[command_name](data)
     except Exception as e:
-        print(e)
+        L.exception(e)
         return {"cmd": f"{command_name}_error"}
 
     return {"cmd": f"{command_name}_done", "data": result}

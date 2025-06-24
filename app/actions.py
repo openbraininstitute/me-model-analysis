@@ -1,5 +1,6 @@
 """Actions."""
 
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from entitysdk import Client
@@ -20,11 +21,14 @@ def run_analysis(values: dict) -> Any:
     config = request.config
 
     if config.model_origin == ModelOrigin.ENTITYCORE:
+        L.info("Creating EntityCore client")
         client = Client(
             environment=settings.DEPLOYMENT_ENV,
             project_context=config.project_context,
             token_manager=access_token,
         )
+
+        L.info("About to run analysis")
         run_me_model_analysis_entitycore(client, config.model_id)
 
     elif config.model_origin == ModelOrigin.NEXUS:
@@ -35,3 +39,10 @@ def run_analysis(values: dict) -> Any:
         raise ValueError(msg)
 
     L.info("Analysis done")
+
+
+def run_analysis_mp(values: dict) -> Any:
+    """Run analysis."""
+    with ProcessPoolExecutor() as executor:
+        future = executor.submit(run_analysis, values)
+        future.result()
