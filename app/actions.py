@@ -1,7 +1,6 @@
 """Actions."""
 
 from concurrent.futures import ProcessPoolExecutor
-from multiprocessing import get_context
 from typing import Any
 
 from entitysdk import Client
@@ -44,6 +43,6 @@ def run_analysis(values: dict) -> Any:
 
 def run_analysis_mp(values: dict) -> Any:
     """Run analysis."""
-    with ProcessPoolExecutor(mp_context=get_context("spawn")) as executor:
+    with ProcessPoolExecutor() as executor:
         future = executor.submit(run_analysis, values)
         future.result()
