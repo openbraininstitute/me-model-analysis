@@ -27,13 +27,9 @@ def run_analysis(values: dict) -> Any:
             project_context=config.project_context,
             token_manager=access_token,
         )
+
         L.info("About to run analysis")
         run_me_model_analysis_entitycore(client, config.model_id)
-
-        with ProcessPoolExecutor() as executor:
-            future = executor.submit(run_me_model_analysis_entitycore, client, config.model_id)
-            result = future.result()
-            L.info(result)
 
     elif config.model_origin == ModelOrigin.NEXUS:
         run_me_model_analysis_nexus(config.self_url, access_token)
@@ -43,3 +39,10 @@ def run_analysis(values: dict) -> Any:
         raise ValueError(msg)
 
     L.info("Analysis done")
+
+
+def run_analysis_mp(values: dict) -> Any:
+    """Run analysis."""
+    with ProcessPoolExecutor() as executor:
+        future = executor.submit(run_analysis, values)
+        future.result()
