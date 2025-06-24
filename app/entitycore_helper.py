@@ -171,7 +171,15 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
     holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
 
     # compile the mechanisms
-    subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
+    subprocess.run(
+        [
+            "nrnivmodl",
+            "-incflags",
+            "-DDISABLE_REPORTINGLIB",
+            str(downloaded_memodel.mechanisms_dir)
+        ],
+        check=True
+    )
 
     cell = create_bluecellulab_cell(
         downloaded_memodel.hoc_path,
