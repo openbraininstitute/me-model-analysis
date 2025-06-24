@@ -3,6 +3,7 @@
 import json
 import os
 import signal
+import threading
 from contextlib import asynccontextmanager
 from sched import scheduler
 from threading import Thread
@@ -20,6 +21,11 @@ from app.logger import L
 SHUTDOWN_TIMER = 1800  # sec (30 min)
 
 scheduler = scheduler()
+
+
+def process_message_threaded(*args) -> None:
+    """Process message in background."""
+    threading.Thread(target=process_message, args=args).start()
 
 
 def _shutdown_timer() -> None:
@@ -104,7 +110,7 @@ def init(msg: dict):
 def default(msg: dict, background_tasks: BackgroundTasks) -> JSONResponse:
     """Process message."""
     scheduler.enter(SHUTDOWN_TIMER, 1, _shutdown_timer)  # reset idle shutdown timer
-    background_tasks.add_task(process_message, msg)
+    background_tasks.add_task(process_message_threaded, msg)
 
     response = (
         {"cmd": f"{msg['cmd']}_processing"} if "cmd" in msg else {"message": "Processing message"}
