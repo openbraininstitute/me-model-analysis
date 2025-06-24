@@ -1,10 +1,10 @@
 """Handler."""
 
-from app.actions import run_analysis
+from app.actions import run_analysis_mp
 from app.logger import L
 
 function_mapping = {
-    "run_analysis": run_analysis,
+    "run_analysis": run_analysis_mp,
     "ping": lambda _: {"message": "Service up"},
 }
 

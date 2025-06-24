@@ -163,6 +163,7 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
     """
+    L.info("Downloading MEModel")
     memodel = client.get_entity(
         entity_type=MEModel,
         entity_id=memodel_id,
@@ -170,7 +171,10 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
     downloaded_memodel = download_memodel(client, memodel, output_dir=".")
     holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
 
-    # compile the mechanisms
+    L.info(f"Model holding current: {holding_current}")
+    L.info(f"Model threshold current: {threshold_current}")
+
+    L.info("Compiling mechanisms")
     subprocess.run(["nrnivmodl", str(downloaded_memodel.mechanisms_dir)], check=True)
 
     cell = create_bluecellulab_cell(
@@ -182,7 +186,11 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
 
+    L.info("Running validations")
     validation_dict = run_validations(cell, memodel.name, output_dir="./figures")
 
+    L.info("Saving calibration and validation results")
     register_calibration(client, memodel, validation_dict["memodel_properties"])
     register_validations(client, memodel, validation_dict)
+
+    L.success("Done")

@@ -1290,7 +1290,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bluecellulab", specifier = ">=2.6.51" },
+    { name = "bluecellulab", specifier = "==2.6.57" },
     { name = "bluepyemodel", extras = ["all"], specifier = "==1.0.24" },
     { name = "boto3" },
     { name = "entitysdk", specifier = "==0.6.1" },

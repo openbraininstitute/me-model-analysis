@@ -37,7 +37,10 @@ class Settings(BaseSettings):
     LOG_DIAGNOSE: bool = False
     LOG_ENQUEUE: bool = False
     LOG_CATCH: bool = True
-    LOG_STANDARD_LOGGER: dict[str, str] = {"root": "INFO"}
+    LOG_STANDARD_LOGGER: dict[str, str] = {
+        "root": "INFO",
+        "fontTools": "WARNING",
+    }
 
 
 settings = Settings()
