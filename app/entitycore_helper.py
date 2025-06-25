@@ -207,9 +207,7 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
     from bluecellulab.validation.validation import run_validations
 
     L.info("Running validations")
-    validation_dict = run_validations(
-        cell, memodel.name, spike_threshold_voltage=-30, output_dir="./figures"
-    )
+    validation_dict = run_validations(cell, memodel.name, output_dir="./figures")
 
     L.info("Saving validation results")
     register_validations(client, memodel, validation_dict)
