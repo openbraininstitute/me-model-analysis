@@ -191,14 +191,27 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         holding_current,
         threshold_current,
     )
+
+    if threshold_current is None or threshold_current == 0.0:
+        L.info("No threshold current found, will compute it.")
+        # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
+        from bluecellulab.tools import compute_memodel_properties
+
+        memodel_properties = compute_memodel_properties(cell)
+        cell.threshold = memodel_properties["rheobase"]
+
+        L.info("Saving calibration and validation results")
+        register_calibration(client, memodel, memodel_properties)
+
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
 
     L.info("Running validations")
-    validation_dict = run_validations(cell, memodel.name, output_dir="./figures")
+    validation_dict = run_validations(
+        cell, memodel.name, spike_threshold_voltage=-30, output_dir="./figures"
+    )
 
-    L.info("Saving calibration and validation results")
-    register_calibration(client, memodel, validation_dict["memodel_properties"])
+    L.info("Saving validation results")
     register_validations(client, memodel, validation_dict)
 
     L.success("Done")
