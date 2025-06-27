@@ -134,11 +134,16 @@ def register_validations(client: Client, memodel, validation_dict, val_details_o
 
         # register figure(s) as asset(s)
         for fig_path in val_dict["figures"]:
+            if fig_path.suffix != ".pdf":
+                msg = "Only pdf files are supported for validation result figures."
+                raise ValueError(msg)
+
             client.upload_file(
                 entity_id=registered.id,
                 entity_type=ValidationResult,
                 file_path=str(fig_path),
-                file_content_type=f"application/{str(fig_path).split('.')[-1]}",
+                file_content_type="application/pdf",
+                asset_label="validation_result_figure",
             )
 
         if val_dict["validation_details"]:
@@ -153,6 +158,7 @@ def register_validations(client: Client, memodel, validation_dict, val_details_o
                 entity_type=ValidationResult,
                 file_path=str(val_details_path),
                 file_content_type="text/plain",
+                asset_label="validation_result_details",
             )
 
 
@@ -180,9 +186,9 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
             "nrnivmodl",
             "-incflags",
             "-DDISABLE_REPORTINGLIB",
-            str(downloaded_memodel.mechanisms_dir)
+            str(downloaded_memodel.mechanisms_dir),
         ],
-        check=True
+        check=True,
     )
 
     cell = create_bluecellulab_cell(
