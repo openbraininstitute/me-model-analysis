@@ -18,6 +18,23 @@ from entitysdk.models.validation_result import ValidationResult
 from app.logger import L
 
 
+def compile_mechanisms(mechanisms_dir):
+    """Compile mechanisms in the given directory.
+
+    Args:
+        mechanisms_dir (str or Pathlib.Path): path to the directory with mechanisms
+    """
+    subprocess.run(
+        [
+            "nrnivmodl",
+            "-incflags",
+            "-DDISABLE_REPORTINGLIB",
+            str(mechanisms_dir),
+        ],
+        check=True,
+    )
+
+
 def get_holding_and_threshold(calibration_result):
     """Get holding and threshold currents from the MEModel.
 
@@ -56,6 +73,40 @@ def create_bluecellulab_cell(hoc_path, morphology_path, hold_curr, thres_curr):
     return Cell(
         hoc_path, morphology_path, template_format="v6", emodel_properties=emodel_properties
     )
+
+
+def get_memodel_and_create_cell(client: Client, memodel_id: str):
+    """Get MEModel, compile the mechanisms and create a bluecellulab cell.
+
+    Args:
+        client (Client): EntitySDK client
+        memodel_id (str): id of the MEModel to download
+    Returns:
+        memodel (MEModel): MEModel entitysdk object
+        cell (Cell): bluecellulab Cell object
+    """
+    L.info("Downloading MEModel")
+    memodel = client.get_entity(
+        entity_type=MEModel,
+        entity_id=memodel_id,
+    )
+    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
+    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+
+    L.info(f"Model holding current: {holding_current}")
+    L.info(f"Model threshold current: {threshold_current}")
+
+    L.info("Compiling mechanisms")
+    compile_mechanisms(downloaded_memodel.mechanisms_dir)
+
+    cell = create_bluecellulab_cell(
+        downloaded_memodel.hoc_path,
+        downloaded_memodel.morphology_path,
+        holding_current,
+        threshold_current,
+    )
+
+    return memodel, cell
 
 
 def register_calibration(client, memodel, calibration_dict):
@@ -169,36 +220,9 @@ def run_and_save_calibration(client: Client, memodel_id: str):
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
     """
-    L.info("Downloading MEModel")
-    memodel = client.get_entity(
-        entity_type=MEModel,
-        entity_id=memodel_id,
-    )
-    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
-    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+    memodel, cell = get_memodel_and_create_cell(client, memodel_id)
 
-    L.info(f"Model holding current: {holding_current}")
-    L.info(f"Model threshold current: {threshold_current}")
-
-    L.info("Compiling mechanisms")
-    subprocess.run(
-        [
-            "nrnivmodl",
-            "-incflags",
-            "-DDISABLE_REPORTINGLIB",
-            str(downloaded_memodel.mechanisms_dir),
-        ],
-        check=True,
-    )
-
-    cell = create_bluecellulab_cell(
-        downloaded_memodel.hoc_path,
-        downloaded_memodel.morphology_path,
-        holding_current,
-        threshold_current,
-    )
-
-    if threshold_current is None or threshold_current == 0.0:
+    if cell.threshold == 0.0:
         L.info("No threshold current found, will compute it.")
         # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
         from bluecellulab.tools import compute_memodel_properties
@@ -216,34 +240,7 @@ def run_and_save_validation(client: Client, memodel_id: str):
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
     """
-    L.info("Downloading MEModel")
-    memodel = client.get_entity(
-        entity_type=MEModel,
-        entity_id=memodel_id,
-    )
-    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
-    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
-
-    L.info(f"Model holding current: {holding_current}")
-    L.info(f"Model threshold current: {threshold_current}")
-
-    L.info("Compiling mechanisms")
-    subprocess.run(
-        [
-            "nrnivmodl",
-            "-incflags",
-            "-DDISABLE_REPORTINGLIB",
-            str(downloaded_memodel.mechanisms_dir),
-        ],
-        check=True,
-    )
-
-    cell = create_bluecellulab_cell(
-        downloaded_memodel.hoc_path,
-        downloaded_memodel.morphology_path,
-        holding_current,
-        threshold_current,
-    )
+    memodel, cell = get_memodel_and_create_cell(client, memodel_id)
 
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
