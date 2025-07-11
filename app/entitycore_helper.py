@@ -162,8 +162,8 @@ def register_validations(client: Client, memodel, validation_dict, val_details_o
             )
 
 
-def run_and_save_calibration_validation(client: Client, memodel_id: str):
-    """Download MEModel, run MEModel validation, and save validation and calibration results.
+def run_and_save_calibration(client: Client, memodel_id: str):
+    """Download MEModel, run MEModel calibration and save results.
 
     Args:
         client (Client): EntitySDK client
@@ -204,10 +204,46 @@ def run_and_save_calibration_validation(client: Client, memodel_id: str):
         from bluecellulab.tools import compute_memodel_properties
 
         memodel_properties = compute_memodel_properties(cell)
-        cell.threshold = memodel_properties["rheobase"]
 
         L.info("Saving calibration and validation results")
         register_calibration(client, memodel, memodel_properties)
+
+
+def run_and_save_validation(client: Client, memodel_id: str):
+    """Download MEModel, run MEModel validation, and save validation results.
+
+    Args:
+        client (Client): EntitySDK client
+        memodel_id (str): id of the MEModel to download
+    """
+    L.info("Downloading MEModel")
+    memodel = client.get_entity(
+        entity_type=MEModel,
+        entity_id=memodel_id,
+    )
+    downloaded_memodel = download_memodel(client, memodel, output_dir=".")
+    holding_current, threshold_current = get_holding_and_threshold(memodel.calibration_result)
+
+    L.info(f"Model holding current: {holding_current}")
+    L.info(f"Model threshold current: {threshold_current}")
+
+    L.info("Compiling mechanisms")
+    subprocess.run(
+        [
+            "nrnivmodl",
+            "-incflags",
+            "-DDISABLE_REPORTINGLIB",
+            str(downloaded_memodel.mechanisms_dir),
+        ],
+        check=True,
+    )
+
+    cell = create_bluecellulab_cell(
+        downloaded_memodel.hoc_path,
+        downloaded_memodel.morphology_path,
+        holding_current,
+        threshold_current,
+    )
 
     # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
     from bluecellulab.validation.validation import run_validations
