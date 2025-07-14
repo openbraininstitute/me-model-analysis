@@ -213,24 +213,42 @@ def register_validations(client: Client, memodel, validation_dict, val_details_o
             )
 
 
-def run_and_save_calibration(client: Client, memodel_id: str):
-    """Download MEModel, run MEModel calibration and save results.
+def run_and_save_calibration_and_thumbnail(client: Client, memodel_id: str, celsius=34.0, v_init=-80.0):
+    """Download MEModel, run MEModel calibration and thumbnail generation and save results.
 
     Args:
         client (Client): EntitySDK client
         memodel_id (str): id of the MEModel to download
+        celsius: Temperature in Celsius. Default is 34.0.
+        v_init: Initial membrane potential. Default is -80.0 mV.
     """
     memodel, cell = get_memodel_and_create_cell(client, memodel_id)
 
+    # calibration
     if cell.threshold == 0.0:
         L.info("No threshold current found, will compute it.")
         # importing bluecellulab AFTER compiling the mechanisms to avoid segmentation fault
         from bluecellulab.tools import compute_memodel_properties
 
         memodel_properties = compute_memodel_properties(cell)
+        # set hypamp and threshold that will be used in thumbnail generation
+        cell.hypamp = memodel_properties["holding_current"]
+        cell.threshold = memodel_properties["rheobase"]
 
         L.info("Saving calibration and validation results")
         register_calibration(client, memodel, memodel_properties)
+
+    # thumbnail generation
+    from bluecellulab.simulation.neuron_globals import NeuronGlobals
+    from bluecellulab.validation.validation import thumbnail_test
+
+    out_dir = pathlib.Path("./figures") / memodel.name
+    out_dir.mkdir(parents=True, exist_ok=True)
+    neuron_globals = NeuronGlobals.get_instance()
+    neuron_globals.temperature = celsius
+    neuron_globals.v_init = v_init
+    thumbnail_result = thumbnail_test(cell.template_params, cell.threshold, out_dir)
+    register_validations(client, memodel, {"thumbnail_test": thumbnail_result})
 
 
 def run_and_save_validation(client: Client, memodel_id: str):
